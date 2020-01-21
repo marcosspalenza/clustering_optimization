@@ -14,9 +14,9 @@ RUN pip3 install -U sklearn
 RUN pip3 install -U scikit-optimize
 
 #Add clustering script
-ADD . /app/
+ADD ./clstr/ /app/
 
-#set path to /app
-WORKDIR /app
+#set path to /app/
+WORKDIR /app/
 
 ENTRYPOINT [ "python3" ]

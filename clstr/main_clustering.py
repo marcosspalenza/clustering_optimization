@@ -19,35 +19,38 @@ def load_labels(filename, pathto="./data/IN/", header=0):
         labels = [n for n in docs.split("\n")]
     return labels
 
-def load_matrix(filename, fformat, pathto="./data/IN/", fsep=" ", header=0):
+def load_matrix(filename, fformat, pathto="./data/IN/", fsep=" ", header=1):
     data = []
-    if fformat == "mtx":
-        with open(pathto+filename, 'r', encoding=self.encoding) as fh:
+    if fformat == "mat":
+        with open(pathto+filename, 'r') as fh:
             while header > 0:
-                fh.readline()
                 header = header - 1
             docs = fh.read()
-            data.append(np.array([float(n) for n in docs.split("\n")[did].split()]))
+            try:
+                data = np.array([[float(l) for l in line.split(fsep)] for line in docs.split("\n") if line != ""])
+            except Exception as err:
+                print("[Error] Data I/O problems. "+str(err))
         return data
-
-    elif fformat == "mat":
-        with open(pathto+filename, 'r', encoding=self.encoding) as fh:
+    elif fformat == "mtx":
+        with open(pathto+filename, 'r') as fh:
+            head = []
             while header > 0:
-                fh.readline()
+                head.append(fh.readline())
                 header = header - 1
+            docid = head[-1]
             docs = fh.read()
-            data.append(np.array([float(n) for n in docs.split("\n")[did].split()]))
+            try:
+                data = np.zeros((int(docid.split(fsep)[0])+1, int(docid.split(fsep)[1])+1))
+                for n in docs.split("\n"):
+                    if n != "":
+                        id1, id2, n = n.split(fsep)
+                        data[int(id1), int(id2)] = float(n)
+            except Exception as err:
+                print("[Error] Data I/O problems. "+str(err))
         return data
-    else:
+    else: 
         print("Unexpected File Format.")
 
-def save_matrix(self, filename, pathto, fmt="%.4g", delimiter=' '):
-    with open(pathto+filename, 'w') as fh:
-        fh.write(str(np.shape(self.data)[0])+" "+str(np.shape(self.data)[1])+"\n")
-        for rid in range(np.shape(self.data)[0]):
-            #lista = delimiter.join("0" if data[rid,idx] == 0 else fmt % data[rid,idx] for idx in  range(np.shape(data[rid])[1]))
-            lista = delimiter.join("0" if self.data[rid, idx] == 0 else fmt % self.data[rid,idx] for idx in  range(np.shape(self.data[rid])[0]))
-            fh.write(lista + '\n')
 """
 Analyze cluster labels to parse cluster_id in max vote labels
 """
@@ -96,7 +99,7 @@ def main()
     parser = argparse.ArgumentParser(usage="%(prog)s [options] <dataset>", description="Clustering optimization by distance metrics and internal validity indexes.")
     parser.add_argument("dataset", help="Dataset folder.")
     parser.add_argument("-i", "--pathin", type=str, dest=dbinput, default="./data/input/", help="Dataset path location.")
-    parser.add_argument("-r", "--pathout", type=str, dest=dboutput, default="./data/output/", help="Dataset results output.")
+    parser.add_argument("-o", "--pathout", type=str, dest=dboutput, default="./data/output/", help="Dataset results output.")
     parser.add_argument("-l", "--labels", type=str, dest=dblabels, default="", help="Dataset single column labels. Default : None")
     parser.add_argument("-h", "--header", type=int, dest=header_size, default=0, help="Dataset files header size. Default : 0.")
     parser.add_argument("-f", "--format", type=str, dest=dbformat, default="mtx", help="Dataset input format. [Matrix Market (mtx), Dense Matrix (mat)]. Default : 'mtx'.")
@@ -104,7 +107,7 @@ def main()
     # Distance matrix not supported in this version
     parser.add_argument("-a", "--algorithm", type=str, dest=algorithm, default="agglomerative", help="Clustering algorithm. Default ': agglomerative. '. \n"+"-".join(__ALGORITHMS__))
     # Algorithms' choice not supported in this version
-    parser.add_argument("-o", "--optimizer", type=str, dest=optimizer, default="gprocess", help="Optimizer algorithm. Default : 'gprocess'. \n"+"-".join(__OPTIMIZERS__))
+    parser.add_argument("-t", "--optimizer", type=str, dest=optimizer, default="gprocess", help="Optimizer algorithm. Default : 'gprocess'. \n"+"-".join(__OPTIMIZERS__))
     parser.add_argument("-e", "--evaluation", type=str, dest=evaluation, default="silhouette", help="Optimization measure using Clustering Internal Validity Indexes. Default : 'silhouette'. \n"+"-".join(__VALIDATION_MEASURES__))
     args = parser.parse_args()
     

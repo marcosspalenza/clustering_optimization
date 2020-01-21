@@ -25,11 +25,5 @@ RUN pip3 install -U skopt
 #Add clustering script
 ADD . /app/
 
-#Add clustering script
-ADD ./data/UCI/ /app/data/
-
 #set path to /app
 WORKDIR /app
-
-#run script script
-CMD "python3" "main_clustering.py" "-m" "uci" "data"

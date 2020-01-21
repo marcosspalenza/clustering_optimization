@@ -95,20 +95,20 @@ External Clustering Validation Measures
 __VALIDATION_MEASURES__ =["ARI", "NMI", "CA"]
 #"nmi", "ari", "max_pairwise","min_pairwise"
 
-def main()
+def main():
     parser = argparse.ArgumentParser(usage="%(prog)s [options] <dataset>", description="Clustering optimization by distance metrics and internal validity indexes.")
     parser.add_argument("dataset", help="Dataset folder.")
-    parser.add_argument("-i", "--pathin", type=str, dest=dbinput, default="./data/input/", help="Dataset path location.")
-    parser.add_argument("-o", "--pathout", type=str, dest=dboutput, default="./data/output/", help="Dataset results output.")
-    parser.add_argument("-l", "--labels", type=str, dest=dblabels, default="", help="Dataset single column labels. Default : None")
-    parser.add_argument("-h", "--header", type=int, dest=header_size, default=0, help="Dataset files header size. Default : 0.")
-    parser.add_argument("-f", "--format", type=str, dest=dbformat, default="mtx", help="Dataset input format. [Matrix Market (mtx), Dense Matrix (mat)]. Default : 'mtx'.")
-    parser.add_argument("-d", "--distance", type=str, dest=distance_metric, default="euclidean", help="Distance metric for samples' affinity evaluation \n"+"\t-".join(__METRICS__))
+    parser.add_argument("-i", "--pathin", type=str, dest="dbinput", default="./data/input/", help="Dataset path location.")
+    parser.add_argument("-o", "--pathout", type=str, dest="dboutput", default="./data/output/", help="Dataset results output.")
+    parser.add_argument("-l", "--labels", type=str, dest="dblabels", default="", help="Dataset single column labels. Default : None")
+    parser.add_argument("-s", "--sheader", type=int, dest="size_header", default=1, help="Dataset files header size. Default : 1.")
+    parser.add_argument("-f", "--format", type=str, dest="dbformat", default="mtx", help="Dataset input format. [Matrix Market (mtx), Dense Matrix (mat)]. Default : 'mtx'.")
+    parser.add_argument("-d", "--distance", type=str, dest="distance_metric", default="euclidean", help="Distance metric for samples' affinity evaluation \n"+"\t-".join(__METRICS__))
     # Distance matrix not supported in this version
-    parser.add_argument("-a", "--algorithm", type=str, dest=algorithm, default="agglomerative", help="Clustering algorithm. Default ': agglomerative. '. \n"+"-".join(__ALGORITHMS__))
+    parser.add_argument("-a", "--algorithm", type=str, dest="algorithm", default="agglomerative", help="Clustering algorithm. Default ': agglomerative. '. \n"+"-".join(__ALGORITHMS__))
     # Algorithms' choice not supported in this version
-    parser.add_argument("-t", "--optimizer", type=str, dest=optimizer, default="gprocess", help="Optimizer algorithm. Default : 'gprocess'. \n"+"-".join(__OPTIMIZERS__))
-    parser.add_argument("-e", "--evaluation", type=str, dest=evaluation, default="silhouette", help="Optimization measure using Clustering Internal Validity Indexes. Default : 'silhouette'. \n"+"-".join(__VALIDATION_MEASURES__))
+    parser.add_argument("-t", "--optimizer", type=str, dest="optimizer", default="gprocess", help="Optimizer algorithm. Default : 'gprocess'. \n"+"-".join(__OPTIMIZERS__))
+    parser.add_argument("-e", "--evaluation", type=str, dest="evaluation", default="silhouette", help="Optimization measure using Clustering Internal Validity Indexes. Default : 'silhouette'. \n"+"-".join(__VALIDATION_MEASURES__))
     args = parser.parse_args()
     
     assert args.dbformat == "mtx" or args.dbformat == "mat", "Invalid matrix format"
@@ -126,13 +126,13 @@ def main()
     data = []
     if os.stat(args.dbinput+args.dataset):
         print("[Process] Loading dataset.")
-        data = load_matrix(args.dataset, args.dbformat, pathto=args.dbinput, header=args.header_size)
+        data = load_matrix(args.dataset, args.dbformat, pathto=args.dbinput, header=args.size_header)
 
     labels = []
     if args.dblabels != "":
         if os.stat(args.dbinput+args.dblabels):
             print("[Process] Loading data labels.")
-            labels = load_labels(args.dblabels, pathto=args.dbinput, header=args.header_size)
+            labels = load_labels(args.dblabels, pathto=args.dbinput, header=args.size_header)
 
     # Check libraries' warnings
     # with warnings.catch_warnings():
@@ -180,22 +180,22 @@ def main()
                 evi_nmi = normalized_mutual_info_score(labels, clabels)
                 evi_ca = cluster_accuracy(labels, clabels)
             print("[Process] Writing results.")
-        metrics = [evi_nmi, evi_ari, evi_ca, ivi_ss, ivi_db, ivi_ch, ivi_pm]
-        with open(args.dboutput+"clusters.csv", "a") as out:
-            out.write(" ".join([str(c) for c in clabels]))
-    except Exception as err:
-        print("[Error] "+str(err))
-        with open(args.dboutput+"exceptions.csv", "a") as out:
-            out.write(args.dataset+"\t"+str(timer)+"\t"+"\t".join([args.metric, args.algorithm, args.evaluation, args.optimizer])
-                +"\t"+str(err).replace("\n","\t")
-                +"\n")
+            metrics = [evi_nmi, evi_ari, evi_ca, ivi_ss, ivi_db, ivi_ch, ivi_pm]
+            with open(args.dboutput+"clusters.csv", "a") as out:
+                out.write(" ".join([str(c) for c in clabels]))
+        except Exception as err:
+            print("[Error] "+str(err))
+            with open(args.dboutput+"exceptions.csv", "a") as out:
+                out.write(args.dataset+"\t"+str(timer)+"\t"+"\t".join([args.metric, args.algorithm, args.evaluation, args.optimizer])
+                    +"\t"+str(err).replace("\n","\t")
+                    +"\n")
 
-    else:
-        with open(args.dboutput+"exec.csv", "a") as run:
-            run.write(args.dataset+"\t"+str(timer)+"\t"+"\t".join([args.metric, args.algorithm, args.evaluation, args.optimizer])
-                +"\t"+str(k_tests)
-                +"\t"+":".join([str(len(np.where(clabels == l)[0])) for l in np.unique(clabels)])
-                +"\n")
+        else:
+            with open(args.dboutput+"exec.csv", "a") as run:
+                run.write(args.dataset+"\t"+str(timer)+"\t"+"\t".join([args.metric, args.algorithm, args.evaluation, args.optimizer])
+                    +"\t"+str(k_tests)
+                    +"\t"+":".join([str(len(np.where(clabels == l)[0])) for l in np.unique(clabels)])
+                    +"\n")
 
     print("[Process] Done!")
 

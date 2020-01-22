@@ -9,7 +9,7 @@ from scipy import io
 #from scipy.spatial.distance import pdist, squareform
 from skopt import forest_minimize, gp_minimize, dummy_minimize, BayesSearchCV
 from sklearn.cluster import SpectralClustering, AgglomerativeClustering, MiniBatchKMeans, AffinityPropagation, Birch, DBSCAN # KMeans
-from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabaz_score, pairwise_distances, normalized_mutual_info_score, adjusted_rand_score
+from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score, pairwise_distances, normalized_mutual_info_score, adjusted_rand_score
 
 
 
@@ -26,7 +26,7 @@ class Data:
 class Clustering:
     def __init__(self, data_, matrixpath_, outputpath_=None, distance_=None, metric_="cosine", n_clusters_=0, optimization_="silhouette", algorithm_="spectral", method_="gprocess", labels_=[], idxfocus_=None):
         self.data = data_
-        if distance_ == []:
+        if distance_ == [] or distance_ == None:
             warnings.filterwarnings('ignore', message='Metric applies a coversion.')
             self.distance_mtx = pairwise_distances(data_, metric=metric_, n_jobs=None)
         else:
@@ -152,8 +152,8 @@ class Clustering:
         #else:
         #    res = sp.optimize.minimize(self.__cluster_metric__, int((self.cluster_max - self.cluster_min)/2), bounds=(self.cluster_min, self.cluster_max), method=self.method) #,  n_calls=max_iter)
         #    return res.fun, res.x[0], res.x_iters
-    #def __calinski_harabaz__(self, cluster_labels):
-    #    return calinski_harabaz_score(self.data, cluster_labels)
+    #def __calinski_harabasz__(self, cluster_labels):
+    #    return calinski_harabasz_score(self.data, cluster_labels)
 
     def __silhouette__(self, cluster_labels):
         if self.idxfocus != None:
@@ -169,11 +169,11 @@ class Clustering:
             else:
                 return davies_bouldin_score(self.data, cluster_labels)
 
-    def __calinski_harabaz__(self, cluster_labels):
+    def __calinski_harabasz__(self, cluster_labels):
         if self.idxfocus != None:
-            return calinski_harabaz_score(self.data[self.idxfocus, :], cluster_labels[self.idxfocus])
+            return calinski_harabasz_score(self.data[self.idxfocus, :], cluster_labels[self.idxfocus])
         else:
-            return calinski_harabaz_score(self.data, cluster_labels)
+            return calinski_harabasz_score(self.data, cluster_labels)
     
     def __pairwise_distance_mean__(self, clusters):
         cluster_dist = []
@@ -329,15 +329,15 @@ class Clustering:
         elif self.optimization == "size_avg":
             return self.__avg_size__(cluster_labels)
         elif self.optimization == "ch_score":
-            return self.__calinski_harabaz__(cluster_labels)
+            return self.__calinski_harabasz__(cluster_labels)
         elif self.optimization == "db_score":
             return self.__davies_bouldin__(cluster_labels)
         #elif self.optimization =="sum_squared_errors":
         #    return self.sum_squared_errors(cluster_labels) # sum of centroid errors computed for each sample in an observed cluster
         #elif self.optimization =="centroid_distance":
         #    return self.centroid_diff(cluster_labels) # sum of distances for each internal cluster sample x centroid
-        #elif self.optimization =="calinski_harabaz":
-        #    return calinski_harabaz(cluster_labels) # CH score
+        #elif self.optimization =="calinski_harabasz":
+        #    return calinski_harabasz(cluster_labels) # CH score
         elif self.optimization =="silhouette":
             return -1 * self.__silhouette__(cluster_labels) # silhoutte score
         return None

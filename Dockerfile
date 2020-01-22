@@ -19,4 +19,10 @@ ADD ./clstr/ /app/
 #set path to /app/
 WORKDIR /app/
 
+RUN mkdir /data/
+
+RUN mkdir /data/input/
+
+RUN mkdir /data/output/
+
 ENTRYPOINT [ "python3" ]

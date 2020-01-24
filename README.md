@@ -62,40 +62,52 @@ ___
 > Dataset input format. Two numeric dataset formats are supported `sparse` [Matrix Market](https://math.nist.gov/MatrixMarket/) (line column value) non-zero features or `dense` containing all features of each samples' line.
 >
 > -d --distance, 
-> Distance metric for samples' affinity evaluation. Default : `euclidean`. The [scikit distances](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise_distances.html) avaliable as presented in Table 1.
+> Distance metric for samples' affinity evaluation. Default : `euclidean`. The [scikit distances](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise_distances.html) avaliable as presented in [Table 1](#table-metrics).
 >
 > -a --algorithm,
-> Clustering algorithm. Default : `agglomerative`.
+> Clustering algorithm. Default : `agglomerative`. The list containing supported algorithms are presented in [Table 2](#table-algorithms).
 >
-> -t --optimizer, Optimizer algorithm. Default : `gprocess`.
+> -t --optimizer, Optimizer algorithm. Default : `gprocess`. The list containing the supported optimizers are presented in [Table 3](#table-optimizer).
 >
 > -e --evaluation, 
-> Optimization measure using Clustering Internal Validity Indexes - IVI. Default : `silhouette`.
+> Optimization measure using Clustering Internal Validity Indexes - IVI. Default : `silhouette`. All the validation measures included are presented in [Table 4](#table-ivi).
 
-###### Table 1. Metrics
+<h4 id="table-metrics">
+ Table 1. Metrics
+</h4> 
+
 | Metrics       |                |               |               |               |                |
 |---------------|:--------------:|:-------------:|:-------------:|:-------------:|:--------------:|
-| braycurtis    | canberra       | chebyshev     | cityblock     | correlation   | cosine         |
+| braycurtis    | canberra       | chebyshev     | cityblock ¹   | correlation   | cosine         |
 | dice          | euclidean      | hamming       | haversine     | jaccard       | kulsinski      |
 | l1 ¹          | l2 ¹           | mahalanobis   | manhattan     | matching      | minkowski      |
 | nan_euclidean | rogerstanimoto | russellrao    | seuclidean    | sokalmichener | sokalsneath    |
-| sqeuclidean   | wminkowski ²   | yule ²        |               |               |                |
+| sqeuclidean   | wminkowski ²   | yule          |               |               |                |
 
 ***¹ Some distances are simetric to others. Prevent to run duplicate experiments!***
 
 ***² The optimization may not work using some distance metrics due to the data sparsity, required weighting or unbalanced features.***
 
-###### Table 2. Algorithms
+<h4 id="table-algorithms">
+ Table 2. Algorithms
+</h4>
+
 | Algorithms    |
 |---------------|
 | agglomerative |
 
-###### Table 3. Optimizers
+<h4 id="table-optimizers">
+ Table 3. Optimizers
+</h4>
+
 | Optimizers    |                |                |
 |---------------|:--------------:|:--------------:|
 | gprocess      | rdn_forest     | dummy          |
 
-###### Table 4. Internal Validity Indexes - IVI
+<h4 id="table-ivi">
+ Table 4. Internal Validity Indexes - IVI
+</h4>
+
 | IVI           |                |                |                |                |
 |---------------|:--------------:|:--------------:|:--------------:|:--------------:|
 | silhouette    | size_avg       | mean_pairwise  | ch_score       | db_score       | 

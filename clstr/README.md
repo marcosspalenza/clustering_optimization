@@ -42,17 +42,17 @@ Optimization measure using Clustering Internal Validity Indexes - IVI. Default :
  Table 1. Metrics
 </h4> 
 
-| Metrics       |                |               |               |               |                |
-|---------------|:--------------:|:-------------:|:-------------:|:-------------:|:--------------:|
-| braycurtis    | canberra       | chebyshev     | cityblock ¹   | correlation   | cosine         |
-| dice          | euclidean      | hamming       | haversine     | jaccard       | kulsinski      |
-| l1 ¹          | l2 ¹           | mahalanobis   | manhattan     | matching      | minkowski      |
-| nan_euclidean | rogerstanimoto | russellrao    | seuclidean    | sokalmichener | sokalsneath    |
-| sqeuclidean   | wminkowski ²   | yule          |               |               |                |
+| Metrics         |                |               |               |               |                |
+|-----------------|:--------------:|:-------------:|:-------------:|:-------------:|:--------------:|
+| braycurtis      | canberra       | chebyshev     | cityblock ¹   | correlation   | cosine         |
+| dice            | euclidean      | hamming       | haversine     | jaccard       | kulsinski      |
+| l1 ¹            | l2 ¹           | mahalanobis   | manhattan     | matching      | minkowski      |
+| nan_euclidean ² | rogerstanimoto | russellrao    | seuclidean    | sokalmichener | sokalsneath    |
+| sqeuclidean     | wminkowski ²   | yule ²        |               |               |                |
 
-***¹ Some distances are symmetric to others. Prevent to run duplicate experiments!***
+***¹ Some distances are symmetric to others. Prevent to run duplicated experiments!***
 
-***² The optimization may not work using some distance metrics due to the data distribution.***
+***² The optimization may not work using certain distance metrics due to the support of data distributions.***
 
 <h4 id="table-algorithms">
  Table 2. Algorithms

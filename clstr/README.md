@@ -50,7 +50,7 @@ Optimization measure using Clustering Internal Validity Indexes - IVI. Default :
 | nan_euclidean | rogerstanimoto | russellrao    | seuclidean    | sokalmichener | sokalsneath    |
 | sqeuclidean   | wminkowski ²   | yule          |               |               |                |
 
-***¹ Some distances are simetric to others. Prevent to run duplicate experiments!***
+***¹ Some distances are symmetric to others. Prevent to run duplicate experiments!***
 
 ***² The optimization may not work using some distance metrics due to the data sparsity, required weighting or unbalanced features.***
 

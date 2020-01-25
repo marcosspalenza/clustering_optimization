@@ -30,7 +30,7 @@ docker run -v IN_DIR:/data/input -v OUT_DIR:/data/output/ clustering_opt:lattest
 
 Replace IN_DIR and OUT_DIR with your data path and DATASET with your database name.
 
-To change data I/O and clustering test parameters observe [help](clstr/README.md) options:
+For changes on data I/O and clustering test parameters observe [help](clstr/README.md) options:
 ```
 docker run clustering_opt:lattest main_clustering.py --help
 ```

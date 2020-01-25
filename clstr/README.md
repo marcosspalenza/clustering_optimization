@@ -52,7 +52,7 @@ Optimization measure using Clustering Internal Validity Indexes - IVI. Default :
 
 ***¹ Some distances are symmetric to others. Prevent to run duplicate experiments!***
 
-***² The optimization may not work using some distance metrics due to the data sparsity, required weighting or unbalanced features.***
+***² The optimization may not work using some distance metrics due to the data distribution.***
 
 <h4 id="table-algorithms">
  Table 2. Algorithms

@@ -11,7 +11,7 @@ from sklearn.metrics import  pairwise_distances, normalized_mutual_info_score, a
 
 def load_labels(filename, pathto="./data/IN/", header=0):
     labels = []
-    with open(pathto+filename, 'r', encoding=self.encoding) as fh:
+    with open(pathto+filename, 'r') as fh:
         while header > 0:
             var = fh.readline()
             header = header - 1

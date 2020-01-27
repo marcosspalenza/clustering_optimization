@@ -182,19 +182,22 @@ def main():
                 evi_nmi = normalized_mutual_info_score(labels, clabels)
                 evi_ca = cluster_accuracy(labels, clabels)
             print("[Process] Writing results.")
-            metrics = [evi_nmi, evi_ari, evi_ca, ivi_ss, ivi_db, ivi_ch, ivi_pm]
+            metrics = [ivi_ss, ivi_db, ivi_ch, ivi_pm, evi_nmi, evi_ari, evi_ca]
             with open(args.dboutput+"clusters.csv", "a") as out:
                 out.write(" ".join([str(c) for c in clabels]))
         except Exception as err:
             print("[Error] "+str(err))
             with open(args.dboutput+"exceptions.csv", "a") as out:
-                out.write(args.dataset+"\t"+str(timer)+"\t"+"\t".join([args.distance_metric, args.algorithm, args.evaluation, args.optimizer])
+                out.write(args.dataset
+                    +"\t"+str(timer)
+                    +"\t"+"\t".join([args.distance_metric, args.algorithm, args.evaluation, args.optimizer])
                     +"\t"+str(err).replace("\n","\t")
                     +"\n")
 
         else:
             with open(args.dboutput+"exec.csv", "a") as run:
                 run.write(args.dataset+"\t"+str(timer)+"\t"+"\t".join([args.distance_metric, args.algorithm, args.evaluation, args.optimizer])
+                    +"\t"+"\t".join([str(round(m,4)) for m in metrics])
                     +"\t"+str(k_tests)
                     +"\t"+":".join([str(len(np.where(clabels == l)[0])) for l in np.unique(clabels)])
                     +"\n")

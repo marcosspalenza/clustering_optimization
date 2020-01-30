@@ -19,7 +19,7 @@ docker build -t clustering_opt .
 
 Clone via DockerHub:
 ```
-docker push marcosspalenza/clustering_opt:lattest
+docker pull marcosspalenza/clustering_opt
 ```
 
 ## Usage

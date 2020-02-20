@@ -5,7 +5,7 @@
 ___
 
 ## Positional arguments:
-dataset : Dataset name.
+dataset : Dataset matrix filename.
 
 ___
 
@@ -38,6 +38,34 @@ Clustering algorithm. Default : `agglomerative`. The list containing supported a
 -e --evaluation, 
 Optimization measure using Clustering Internal Validity Indexes - IVI. Default : `silhouette`. All the validation measures included are presented in [Table 4](#table-ivi).
 
+
+## Format
+
+### Sparse
+[Matrix market](https://docs.scipy.org/doc/scipy/reference/io.html#matrix-market-files) sparse matrix format. Header contains the matrix size (samples, features, total). The values are presented using line and column indexes for a value, delimited by a single space.
+```
+1000 10 5000
+1 1 5
+1 2 3
+1 3 8
+2 1 1
+2 3 3
+...
+1000 3 10
+```
+
+### Dense
+Dense matrix format for samples x features data. All samples are represented using ***floats*** or ***integers*** space-separated values. The standard contains a matrix size header.
+```
+1000 10
+1 1 0 3 0 32 1 8 2 0
+2 3 5 6 7 100 9 2 1 10
+7 1 0 0 11 0 3 5 8 8
+...
+2 1 2 3 0 20 1 8 3 0
+```
+
+## Parameters Contents
 <h4 id="table-metrics">
  Table 1. Metrics
 </h4> 

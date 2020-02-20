@@ -24,15 +24,16 @@ docker pull marcosspalenza/clustering_opt
 
 ## Usage
 Requires input and output directories volumes as following.
+
 ```
-docker run -v IN_DIR:/data/input -v OUT_DIR:/data/output/ clustering_opt:lattest main_clustering.py DATASET
+docker run -v IN_DIR:/data/input -v OUT_DIR:/data/output/ clustering_opt:latest main_clustering.py DATASET
 ```
 
 Replace IN_DIR and OUT_DIR with your data path and DATASET with your database name.
 
 For changes on data I/O and clustering test parameters observe [help](clstr/README.md) options:
 ```
-docker run clustering_opt:lattest main_clustering.py --help
+docker run clustering_opt:latest main_clustering.py --help
 ```
 
 ---

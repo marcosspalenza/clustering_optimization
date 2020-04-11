@@ -42,11 +42,11 @@ def load_matrix(filename, fformat, pathto="./data/IN/", fsep=" ", header=1):
             docid = head[-1]
             docs = fh.read()
             try:
-                data = np.zeros((int(docid.split(fsep)[0])+1, int(docid.split(fsep)[1])+1))
+                data = np.zeros((int(docid.split(fsep)[0]), int(docid.split(fsep)[1])))
                 for n in docs.split("\n"):
                     if n != "":
                         id1, id2, n = n.split(fsep)
-                        data[int(id1), int(id2)] = float(n)
+                        data[int(id1)-1, int(id2)-1] = float(n)
             except Exception as err:
                 print("[Error] Data I/O problems. "+str(err))
         return data

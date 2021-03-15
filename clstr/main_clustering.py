@@ -88,7 +88,12 @@ Warnning:
 - The following metrics are simetric to other traditional distances : "cityblock", "l1", "l2"
 - The following metrics are weighted and not addapted on system recognition format : "yule", "wminkowski".
 """
-__METRICS__ = [dist for dist in pairwise_distances.__globals__["_VALID_METRICS"]]
+# __METRICS__ = [dist for dist in pairwise_distances.__globals__["_VALID_METRICS"]] # removed global variable
+__METRICS__ = ['cityblock', 'cosine', 'euclidean', 'l1', 'l2', 'manhattan',
+          'braycurtis', 'canberra', 'chebyshev','correlation', 'dice', 'hamming',
+          'jaccard', 'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto',
+          'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
+          'yule']
 # "davies_bouldin", "calinski_harabasz", "mean_centroid", "max_centroid"
 
 """

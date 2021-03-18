@@ -81,15 +81,16 @@ __OPTIMIZERS__ = [ "gprocess", "dummy", "rdn_forest"] # "exhaustive"
 
 # Internal Clustering Validation Measures
 __IV_INDEXES__ = ["silhouette", "ch_score", "db_score", "sse", "cv_size", "cv_distance"]
-# "davies_bouldin", "calinski_harabasz", "mean_centroid", "max_centroid"
 
 # Distance Affinity Metrics
 """
 Warnning:
 - The following metrics are simetric to other traditional distances : "cityblock", "l1", "l2" ~ "manhattan", "euclidean", "sqeuclidean"
 - The following metrics are weighted and not addapted on system recognition format : "yule", "wminkowski".
-"""
+
+
 # __METRICS__ = [dist for dist in pairwise_distances.__globals__["_VALID_METRICS"]] # deprecated global
+"""
 __METRICS__ = ['cityblock', 'cosine', 'euclidean', 'l1', 'l2', 'manhattan',
           'braycurtis', 'canberra', 'chebyshev','correlation', 'dice', 'hamming',
           'jaccard', 'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto',

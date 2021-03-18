@@ -57,6 +57,176 @@ class Clustering:
             k = k * 2
         return k
 
+    """
+    Evaluation
+    """
+    def __sse__(self, cluster_labels):
+        # Initialise Sum of Squared Errors
+        # add self.idxfocus method
+        sse = 0
+        if self.idxfocus != None:
+            clusters = [cluster_labels[i] for i in self.idxfocus]
+            for c in np.unique(clusters):
+                cluster = np.where(clusters == c)[0]
+                centroid = np.mean(self.data[cluster, :], axis=0)
+                sim = 0
+                for c in cluster:
+                    sim += pairwise_distances(data_[c], centroid, metric="l2", n_jobs=None)[0, 0] # l2 - squared euclidean
+                sse = sse + (sim/len(cluster))
+        else:
+            for c in np.unique(cluster_labels):
+                cluster = np.where(cluster_labels == c)[0]
+                centroid = np.mean(self.data[cluster, :], axis=0)
+                sim = 0
+                for c in cluster:
+                    sim += pairwise_distances(data_[c], centroid, metric="l2", n_jobs=None)[0, 0] # l2 - squared euclidean
+                sse = sse + (sim/len(cluster))
+        return sse
+
+    def __silhouette__(self, cluster_labels):
+        if self.idxfocus != None:
+            return silhouette_score(self.distance_mtx[self.idxfocus, :][:, self.idxfocus], cluster_labels[self.idxfocus], metric="precomputed")
+        else:
+            return silhouette_score(self.distance_mtx, cluster_labels, metric="precomputed")
+
+    def __davies_bouldin__(self, cluster_labels):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            if self.idxfocus != None:
+                return davies_bouldin_score(self.data[self.idxfocus, :], cluster_labels[self.idxfocus])
+            else:
+                return davies_bouldin_score(self.data, cluster_labels)
+
+    def __calinski_harabasz__(self, cluster_labels):
+        if self.idxfocus != None:
+            return calinski_harabasz_score(self.data[self.idxfocus, :], cluster_labels[self.idxfocus])
+        else:
+            return calinski_harabasz_score(self.data, cluster_labels)
+    
+    def __cv_distance__(self, cluster_labels):
+        cluster_dist = []
+        if self.idxfocus != None:
+            clusters = [cluster_labels[i] for i in self.idxfocus]
+            for c in np.unique(clusters):
+                cluster = np.where(clusters == c)[0]
+                sim = []
+                for id1, c1 in enumerate(cluster):
+                    for id2, c2 in enumerate(cluster):
+                        if id2 > id1: # usar precomputed
+                            sim.append(self.distance_mtx[self.idxfocus[c1], self.idxfocus[c2]])
+                if sim != []:
+                    cluster_dist.append(np.mean(sim))
+                else:
+                    cluster_dist.append(0.0)
+        else:
+            for c in np.unique(cluster_labels):
+                cluster = np.where(cluster_labels == c)[0]
+                sim = []
+                for id1, c1 in enumerate(cluster):
+                    for id2, c2 in enumerate(cluster):
+                        if id2 > id1: # usar precomputed
+                            sim.append(self.distance_mtx[c1, c2])
+                if sim != []:
+                    cluster_dist.append(np.mean(sim))
+                else:
+                    cluster_dist.append(0.0)
+        return np.std(cluster_dist)n/np.mean(cluster_dist)
+
+    def __cv_size__(self, cluster_labels):
+        cluster_size = []
+        if self.idxfocus != None:
+            clusters = [cluster_labels[i] for i in self.idxfocus]
+            for c in np.unique(clusters):
+                cltr = np.where(clusters == c)[0]
+                cluster_size.append(len(cltr))
+        else:
+            for c in np.unique(cluster_labels):
+                cltr = np.where(cluster_labels == c)[0]
+                cluster_size.append(len(cltr))
+        return np.std(cluster_size)n/np.mean(cluster_size)
+
+    """
+    Algorithms
+    """
+    ## algorithms:  'cluto', 'libDocumento', 'agglomerative', 'spectral', 'kmeans', 'minibatch', 'birch', 'affinity', 'dbscan' 
+
+    def __run_agglomerative__(self):
+        return AgglomerativeClustering(n_clusters=self.n_clusters, linkage="complete", affinity="precomputed").fit_predict(self.distance_mtx)
+
+    def __run_spectral__(self):
+        return SpectralClustering(n_clusters=self.n_clusters, eigen_solver=None, affinity="precomputed").fit_predict(self.distance_mtx)
+
+    def __run_dbscan__(self):
+        """
+        DBSCAN cannot integrate the module to solve all problems using its default configuration.
+        The proximity distance method sometimes return as result all negative (outliers) or single cluster values.
+        That is not expected on optimization module and number of clusters selection method.
+        Is highly recommended to use DBSCAN just as baseline model while not supported.
+        
+        DBSCAN issues example:
+        >>> [-1, -1, -1, ..., -1, -1, -1]
+        >>> [0, 0, 0, ..., 0, 0, 0]
+        In both cases we solve throwing a null vector as result [], this approach needs to be solved in an upper level (caller).
+        """
+
+        #float(1/self.n_clusters) may be evaluated by some tests to prove efficiency
+        labels =  DBSCAN(eps=float(1/self.n_clusters), metric="precomputed").fit_predict(self.distance_mtx)
+        return labels
+
+    # def __run_cluto(self):
+    #     '''
+    #     CLUTO official page
+    #     http://glaros.dtc.umn.edu/gkhome/cluto/cluto/overview
+    #     '''
+    #     '''
+    #     CLUTO was called and the results was not as expected. In euclidean graph method, CLUTO returns a vector smaller than the dataset size.
+    #     In this cases we return a null array to be discarded in the upper level (caller).
+    #     '''
+    #     if self.metric == "cosine":
+    #         os.system("vcluster -sim='cos' -showfeatures "+self.matrixpath+"values.mtx "+str(self.n_clusters))
+    #         return [int(t) for t in self.read_document("values.mtx.clustering."+str(self.n_clusters), self.matrixpath).split("\n") if t != ""]
+    #     if self.metric == "euclidean":
+    #         os.system("vcluster -sim='dist' -clmethod='graph' "+self.matrixpath+"values.mtx "+str(self.n_clusters))
+    #     else:
+    #         return []
+    #     return [int(t) for t in self.read_document("values.mtx.clustering."+str(self.n_clusters), self.matrixpath).split("\n") if t != ""]
+
+    # def __run_libDocumento(self, iterations=100):
+    #     # libDocumento have to be in the same path
+    #     code_path = os.path.realpath(__file__)[:-os.path.realpath(__file__)[::-1].find("/")]
+    #     if self.metric == "cosine":
+    #         os.system(code_path+"libDocumento_COS --clustering --algorithm kmeans --features "+self.matrixpath+"mmvalues.mtx -k "+str(self.n_clusters)+" --num-inter "+str(iterations))
+    #     if self.metric == "euclidean":
+    #         os.system(code_path+"libDocumento_ECL --clustering --algorithm kmeans --features "+self.matrixpath+"mmvalues.mtx -k "+str(self.n_clusters)+" --num-inter "+str(iterations))
+    #     else:
+    #         return []
+    #     return [int(t) for t in self.read_document("output.clustering", self.matrixpath).split("\n") if t != ""]
+
+    # def __run_kmeans__(self):
+    #     scores = []
+    #     # all_distances, model_predictions, losses, is_initialized, init_op, training_op
+    #     if self.metric == "cosine":
+    #         with tf.Session() as sess:
+    #             kmeans = tf.contrib.factorization.KMeans(tf.convert_to_tensor(self.data, dtype=tf.float32), self.n_clusters, distance_metric=tf.contrib.factorization.COSINE_DISTANCE)
+    #             (all_scores, cluster_idx, clustering_scores, _, kmeans_init, kmeans_training_op) = kmeans.training_graph()
+    #             init = tf.global_variables_initializer()
+    #             sess.run(init)
+    #             sess.run(kmeans_init)
+    #             return sess.run(cluster_idx) [0]
+    #     if self.metric == "euclidean":
+    #         with tf.Session() as sess:
+    #             kmeans = tf.contrib.factorization.KMeans(tf.convert_to_tensor(self.data, dtype=tf.float32), self.n_clusters, distance_metric=tf.contrib.factorization.SQUARED_EUCLIDEAN_DISTANCE)
+    #             (all_scores, cluster_idx, clustering_scores, _, kmeans_init, kmeans_training_op) = kmeans.training_graph()
+    #             init = tf.global_variables_initializer()
+    #             sess.run(init)
+    #             sess.run(kmeans_init)
+    #             return sess.run(cluster_idx) [0]
+    #     else:
+    #         return []
+
+    """
+    Optimizer
+    """
     def cluster_analysis(self):
         #'gaussian' not implemented yet
         # ['minibatch', 'birch', 'affinity'] just works on euclidean distances
@@ -152,127 +322,6 @@ class Clustering:
         #else:
         #    res = sp.optimize.minimize(self.__cluster_metric__, int((self.cluster_max - self.cluster_min)/2), bounds=(self.cluster_min, self.cluster_max), method=self.method) #,  n_calls=max_iter)
         #    return res.fun, res.x[0], res.x_iters
-    #def __calinski_harabasz__(self, cluster_labels):
-    #    return calinski_harabasz_score(self.data, cluster_labels)
-
-    def __silhouette__(self, cluster_labels):
-        if self.idxfocus != None:
-            return silhouette_score(self.distance_mtx[self.idxfocus, :][:, self.idxfocus], cluster_labels[self.idxfocus], metric="precomputed")
-        else:
-            return silhouette_score(self.distance_mtx, cluster_labels, metric="precomputed")
-
-    def __davies_bouldin__(self, cluster_labels):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            if self.idxfocus != None:
-                return davies_bouldin_score(self.data[self.idxfocus, :], cluster_labels[self.idxfocus])
-            else:
-                return davies_bouldin_score(self.data, cluster_labels)
-
-    def __calinski_harabasz__(self, cluster_labels):
-        if self.idxfocus != None:
-            return calinski_harabasz_score(self.data[self.idxfocus, :], cluster_labels[self.idxfocus])
-        else:
-            return calinski_harabasz_score(self.data, cluster_labels)
-    
-    def __pairwise_distance_mean__(self, clusters):
-        cluster_dist = []
-        if self.idxfocus != None:
-            clusters = [clusters[i] for i in self.idxfocus]
-            for c in np.unique(clusters):
-                cluster = np.where(clusters == c)[0]
-                sim = []
-                for id1, c1 in enumerate(cluster):
-                    for id2, c2 in enumerate(cluster):
-                        if id2 > id1: # usar precomputed
-                            sim.append(self.distance_mtx[self.idxfocus[c1], self.idxfocus[c2]])
-                if sim != []:
-                    cluster_dist.append(np.mean(sim))
-                else:
-                    cluster_dist.append(0.0)
-        else:
-            for c in np.unique(clusters):
-                cluster = np.where(clusters == c)[0]
-                sim = []
-                for id1, c1 in enumerate(cluster):
-                    for id2, c2 in enumerate(cluster):
-                        if id2 > id1: # usar precomputed
-                            sim.append(self.distance_mtx[c1, c2])
-                if sim != []:
-                    cluster_dist.append(np.mean(sim))
-                else:
-                    cluster_dist.append(0.0)
-        return np.mean(cluster_dist)
-
-    def __pairwise_distance_max__(self, clusters):
-        cluster_dist = []
-        if self.idxfocus != None:
-            clusters = [clusters[i] for i in self.idxfocus]
-            for c in np.unique(clusters):
-                cluster = np.where(clusters == c)[0]
-                sim = []
-                for id1, c1 in enumerate(cluster):
-                    for id2, c2 in enumerate(cluster):
-                        if id2 > id1: # usar precomputed
-                            sim.append(self.distance_mtx[self.idxfocus[c1], self.idxfocus[c2]])
-                if sim != []:
-                    cluster_dist.append(np.mean(sim))
-                else:
-                    cluster_dist.append(0.0)
-        else:
-            for c in np.unique(clusters):
-                cluster = np.where(clusters == c)[0]
-                sim = []
-                for id1, c1 in enumerate(cluster):
-                    for id2, c2 in enumerate(cluster):
-                        if id2 > id1: # usar precomputed
-                            sim.append(self.distance_mtx[c1, c2])
-                if sim != []:
-                    cluster_dist.append(np.mean(sim))
-                else:
-                    cluster_dist.append(0.0)
-        return np.max(cluster_dist)
-
-    def __avg_size__(self, clusters):
-        cluster_size = []
-        if self.idxfocus != None:
-            clusters = [clusters[i] for i in self.idxfocus]
-            for c in np.unique(clusters):
-                cltr = np.where(clusters == c)[0]
-                cluster_size.append(len(cltr))
-        for c in np.unique(clusters):
-            cltr = np.where(clusters == c)[0]
-            cluster_size.append(len(cltr))
-        return np.mean(cluster_size)/len(np.unique(clusters))
-
-    def __pairwise_distance_min__(self, clusters):
-        cluster_dist = []
-        if self.idxfocus != None:
-            clusters = [clusters[i] for i in self.idxfocus]
-            for c in np.unique(clusters):
-                cluster = np.where(clusters == c)[0]
-                sim = []
-                for id1, c1 in enumerate(cluster):
-                    for id2, c2 in enumerate(cluster):
-                        if id2 > id1: # usar precomputed
-                            sim.append(self.distance_mtx[self.idxfocus[c1], self.idxfocus[c2]])
-                if sim != []:
-                    cluster_dist.append(np.mean(sim))
-                else:
-                    cluster_dist.append(0.0)
-        else:
-            for c in np.unique(clusters):
-                cluster = np.where(clusters == c)[0]
-                sim = []
-                for id1, c1 in enumerate(cluster):
-                    for id2, c2 in enumerate(cluster):
-                        if id2 > id1: # usar precomputed
-                            sim.append(self.distance_mtx[c1, c2])
-                if sim != []:
-                    cluster_dist.append(np.mean(sim))
-                else:
-                    cluster_dist.append(0.0)
-        return np.min(cluster_dist)
 
     def __cluster_metric__(self, k_value):
 
@@ -320,103 +369,19 @@ class Clustering:
                 return -1 * normalized_mutual_info_score(self.labels, cluster_labels)
         elif self.optimization == "ari":
             return -1 * adjusted_rand_score(self.labels, cluster_labels)
-        elif self.optimization == "mean_pairwise":
-            return self.__pairwise_distance_mean__(cluster_labels)
-        elif self.optimization == "max_pairwise":
-            return -1 * self.__pairwise_distance_max__(cluster_labels)
-        elif self.optimization == "min_pairwise":
-            return  -1 * self.__pairwise_distance_min__(cluster_labels)
-        elif self.optimization == "size_avg":
-            return self.__avg_size__(cluster_labels)
+        elif self.optimization == "sse":
+            return self.__sse__(cluster_labels)
+        elif self.optimization == "cv_size":
+            return self.__cv_size__(cluster_labels)
+        elif self.optimization == "cv_distance":
+            return self.__cv_distance__(cluster_labels)
         elif self.optimization == "ch_score":
             return self.__calinski_harabasz__(cluster_labels)
         elif self.optimization == "db_score":
             return self.__davies_bouldin__(cluster_labels)
-        #elif self.optimization =="sum_squared_errors":
-        #    return self.sum_squared_errors(cluster_labels) # sum of centroid errors computed for each sample in an observed cluster
-        #elif self.optimization =="centroid_distance":
-        #    return self.centroid_diff(cluster_labels) # sum of distances for each internal cluster sample x centroid
-        #elif self.optimization =="calinski_harabasz":
-        #    return calinski_harabasz(cluster_labels) # CH score
         elif self.optimization =="silhouette":
             return -1 * self.__silhouette__(cluster_labels) # silhoutte score
         return None
-
-    ## algorithms:  'cluto', 'libDocumento', 'agglomerative', 'spectral', 'kmeans', 'minibatch', 'birch', 'affinity', 'dbscan' 
-
-    # def __run_cluto(self):
-    #     '''
-    #     CLUTO official page
-    #     http://glaros.dtc.umn.edu/gkhome/cluto/cluto/overview
-    #     '''
-    #     '''
-    #     CLUTO was called and the results was not as expected. In euclidean graph method, CLUTO returns a vector smaller than the dataset size.
-    #     In this cases we return a null array to be discarded in the upper level (caller).
-    #     '''
-    #     if self.metric == "cosine":
-    #         os.system("vcluster -sim='cos' -showfeatures "+self.matrixpath+"values.mtx "+str(self.n_clusters))
-    #         return [int(t) for t in self.read_document("values.mtx.clustering."+str(self.n_clusters), self.matrixpath).split("\n") if t != ""]
-    #     if self.metric == "euclidean":
-    #         os.system("vcluster -sim='dist' -clmethod='graph' "+self.matrixpath+"values.mtx "+str(self.n_clusters))
-    #     else:
-    #         return []
-    #     return [int(t) for t in self.read_document("values.mtx.clustering."+str(self.n_clusters), self.matrixpath).split("\n") if t != ""]
-
-    # def __run_libDocumento(self, iterations=100):
-    #     # libDocumento have to be in the same path
-    #     code_path = os.path.realpath(__file__)[:-os.path.realpath(__file__)[::-1].find("/")]
-    #     if self.metric == "cosine":
-    #         os.system(code_path+"libDocumento_COS --clustering --algorithm kmeans --features "+self.matrixpath+"mmvalues.mtx -k "+str(self.n_clusters)+" --num-inter "+str(iterations))
-    #     if self.metric == "euclidean":
-    #         os.system(code_path+"libDocumento_ECL --clustering --algorithm kmeans --features "+self.matrixpath+"mmvalues.mtx -k "+str(self.n_clusters)+" --num-inter "+str(iterations))
-    #     else:
-    #         return []
-    #     return [int(t) for t in self.read_document("output.clustering", self.matrixpath).split("\n") if t != ""]
-
-    # def __run_kmeans__(self):
-    #     scores = []
-    #     # all_distances, model_predictions, losses, is_initialized, init_op, training_op
-    #     if self.metric == "cosine":
-    #         with tf.Session() as sess:
-    #             kmeans = tf.contrib.factorization.KMeans(tf.convert_to_tensor(self.data, dtype=tf.float32), self.n_clusters, distance_metric=tf.contrib.factorization.COSINE_DISTANCE)
-    #             (all_scores, cluster_idx, clustering_scores, _, kmeans_init, kmeans_training_op) = kmeans.training_graph()
-    #             init = tf.global_variables_initializer()
-    #             sess.run(init)
-    #             sess.run(kmeans_init)
-    #             return sess.run(cluster_idx) [0]
-    #     if self.metric == "euclidean":
-    #         with tf.Session() as sess:
-    #             kmeans = tf.contrib.factorization.KMeans(tf.convert_to_tensor(self.data, dtype=tf.float32), self.n_clusters, distance_metric=tf.contrib.factorization.SQUARED_EUCLIDEAN_DISTANCE)
-    #             (all_scores, cluster_idx, clustering_scores, _, kmeans_init, kmeans_training_op) = kmeans.training_graph()
-    #             init = tf.global_variables_initializer()
-    #             sess.run(init)
-    #             sess.run(kmeans_init)
-    #             return sess.run(cluster_idx) [0]
-    #     else:
-    #         return []
-
-    def __run_agglomerative__(self):
-        return AgglomerativeClustering(n_clusters=self.n_clusters, linkage="complete", affinity="precomputed").fit_predict(self.distance_mtx)
-
-    def __run_spectral__(self):
-        return SpectralClustering(n_clusters=self.n_clusters, eigen_solver=None, affinity="precomputed").fit_predict(self.distance_mtx)
-
-    def __run_dbscan__(self):
-        """
-        DBSCAN cannot integrate the module to solve all problems using its default configuration.
-        The proximity distance method sometimes return as result all negative (outliers) or single cluster values.
-        That is not expected on optimization module and number of clusters selection method.
-        Is highly recommended to use DBSCAN just as baseline model while not supported.
-        
-        DBSCAN issues example:
-        >>> [-1, -1, -1, ..., -1, -1, -1]
-        >>> [0, 0, 0, ..., 0, 0, 0]
-        In both cases we solve throwing a null vector as result [], this approach needs to be solved in an upper level (caller).
-        """
-
-        #float(1/self.n_clusters) may be evaluated by some tests to prove efficiency
-        labels =  DBSCAN(eps=float(1/self.n_clusters), metric="precomputed").fit_predict(self.distance_mtx)
-        return labels
 
     """
     IO Utils 

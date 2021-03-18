@@ -102,6 +102,8 @@ Dense matrix format for samples x features data. All samples are represented usi
  Table 4. Internal Validity Indexes - IVI
 </h4>
 
-| IVI           |                |                |                |                |
-|---------------|:--------------:|:--------------:|:--------------:|:--------------:|
-| silhouette    | size_avg       | mean_pairwise  | ch_score       | db_score       | 
+| IVI           |                |                |                |                    |                |
+|---------------|:--------------:|:--------------:|:--------------:|:------------------:|:--------------:|
+| silhouette    | sse            | ch_score       | db_score       | cv_distance ³      | cv_size ³      |
+
+***³ cv - evaluate the coefficient of variation (CV) of the clustering instances. The CV functions are the ratio of standard deviation and the mean of the retrieved values on cluster sizes (cv_size) or pairwise distances (cv_distance). ***

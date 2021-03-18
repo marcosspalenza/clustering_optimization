@@ -50,7 +50,7 @@ def load_matrix(filename, fformat, pathto="./data/IN/", fsep=" ", header=1):
             except Exception as err:
                 print("[Error] Data I/O problems. "+str(err))
         return data
-    else: 
+    else:
         print("Unexpected File Format.")
 
 """
@@ -80,16 +80,21 @@ __OPTIMIZERS__ = [ "gprocess", "dummy", "rdn_forest"] # "exhaustive"
 
 
 # Internal Clustering Validation Measures
-__IV_INDEXES__ = ["size_avg", "silhouette", "mean_pairwise", "ch_score", "db_score"]
+__IV_INDEXES__ = ["silhouette", "ch_score", "db_score", "sse", "cv_size", "cv_distance"]
+# "davies_bouldin", "calinski_harabasz", "mean_centroid", "max_centroid"
 
 # Distance Affinity Metrics
 """
 Warnning:
-- The following metrics are simetric to other traditional distances : "cityblock", "l1", "l2"
+- The following metrics are simetric to other traditional distances : "cityblock", "l1", "l2" ~ "manhattan", "euclidean", "sqeuclidean"
 - The following metrics are weighted and not addapted on system recognition format : "yule", "wminkowski".
 """
-__METRICS__ = [dist for dist in pairwise_distances.__globals__["_VALID_METRICS"]]
-# "davies_bouldin", "calinski_harabasz", "mean_centroid", "max_centroid"
+# __METRICS__ = [dist for dist in pairwise_distances.__globals__["_VALID_METRICS"]] # deprecated global
+__METRICS__ = ['cityblock', 'cosine', 'euclidean', 'l1', 'l2', 'manhattan',
+          'braycurtis', 'canberra', 'chebyshev','correlation', 'dice', 'hamming',
+          'jaccard', 'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto',
+          'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
+          'yule']
 
 """
 External Clustering Validation Measures
@@ -111,6 +116,7 @@ def main():
     # Algorithms' choice not supported in this version
     parser.add_argument("-t", "--optimizer", type=str, dest="optimizer", default="gprocess", help="Optimizer algorithm. Default : 'gprocess'. \n"+"-".join(__OPTIMIZERS__))
     parser.add_argument("-e", "--evaluation", type=str, dest="evaluation", default="silhouette", help="Optimization measure using Clustering Internal Validity Indexes. Default : 'silhouette'. \n"+"-".join(__IV_INDEXES__))
+    parser.add_argument("-k", "--kclusters", type=int, dest="k_clusters", default=0, help="Initial k value tested as the optimization starter")
     args = parser.parse_args()
 
     assert args.dbformat == "sparse" or args.dbformat == "dense", "Invalid matrix format"
@@ -125,46 +131,45 @@ def main():
     if args.distance_metric in ["cityblock", "l1", "l2"]:
         print("[Warning] This metric is symmetric to other avaliable distance, ensure the test consistency.")
 
-    data = []
-    if os.stat(args.dbinput+args.dataset):
-        print("[Process] Loading dataset.")
-        data = load_matrix(args.dataset, args.dbformat, pathto=args.dbinput, header=args.size_header)
-
-    labels = []
-    if args.dblabels != "":
-        if os.stat(args.dbinput+args.dblabels):
-            print("[Process] Loading data labels.")
-            labels = load_labels(args.dblabels, pathto=args.dbinput, header=args.size_header)
-
     # Check libraries' warnings
     # with warnings.catch_warnings():
     #     warnings.simplefilter("ignore")
+    try:
+        data = []
+        if os.stat(args.dbinput+args.dataset):
+            print("[Process] Loading dataset.")
+            data = load_matrix(args.dataset, args.dbformat, pathto=args.dbinput, header=args.size_header)
 
-    if data == []:
-        print("[Error] Load data fails.")
-    else:
-        # Default use within Clustering process
-        # print("[Process] Generating distance matrix")
-        # distance_mtx = pairwise_distances(data, metric=args.distance_metric, n_jobs=None)
-        print("[Process] Dataset Loaded. Size : "+str(data.shape))
-        print("[Process] Generating Clustering module.")
-        start_time = time.time()
+        labels = []
+        if args.dblabels != "":
+            if os.stat(args.dbinput+args.dblabels):
+                print("[Process] Loading data labels.")
+                labels = load_labels(args.dblabels, pathto=args.dbinput, header=args.size_header)
 
-        timer = 0.
-        clabels = []
-        clstr = None
+        if data == []:
+            print("[Error] Load data fails.")
+        else:
+            # Default use within Clustering process
+            # print("[Process] Generating distance matrix")
+            # distance_mtx = pairwise_distances(data, metric=args.distance_metric, n_jobs=None)
+            print("[Process] Dataset Loaded. Size : "+str(data.shape))
+            print("[Process] Generating Clustering module.")
+            start_time = time.time()
 
-        evi_nmi = -1.0
-        evi_ari = -1.0
-        evi_ca = -1.0
-        ivi_ss = -1.0
-        ivi_db = -1.0
-        ivi_ch = -1.0
-        ivi_pm = -1.0
+            timer = 0.
+            clabels = []
+            clstr = None
 
-        try:
+            evi_nmi = -1.0
+            evi_ari = -1.0
+            evi_ca = -1.0
+            ivi_ss = -1.0
+            ivi_db = -1.0
+            ivi_ch = -1.0
+            ivi_pm = -1.0
+
             clstr = Clustering(
-                data, args.dbinput, args.dboutput, metric_ = args.distance_metric,
+                data, args.dbinput, args.dboutput, n_clusters_ = args.k_clusters, metric_ = args.distance_metric,
                 algorithm_ = args.algorithm, optimization_ = args.evaluation,
                 method_ = args.optimizer, labels_=labels
             )
@@ -183,24 +188,24 @@ def main():
                 evi_ca = cluster_accuracy(labels, clabels)
             print("[Process] Writing results.")
             metrics = [ivi_ss, ivi_db, ivi_ch, ivi_pm, evi_nmi, evi_ari, evi_ca]
-            with open(args.dboutput+"clusters.csv", "a") as out:
+            with open(args.dboutput+"clusters.txt", "a") as out:
                 out.write(" ".join([str(c) for c in clabels]))
-        except Exception as err:
-            print("[Error] "+str(err))
-            with open(args.dboutput+"exceptions.csv", "a") as out:
-                out.write(args.dataset
-                    +"\t"+str(timer)
-                    +"\t"+"\t".join([args.distance_metric, args.algorithm, args.evaluation, args.optimizer])
-                    +"\t"+str(err).replace("\n","\t")
-                    +"\n")
+    except Exception as err:
+        print("[Error] "+str(err))
+        with open(args.dboutput+"exceptions.csv", "a") as out:
+            out.write(args.dataset
+                +"\t"+str(timer)
+                +"\t"+"\t".join([args.distance_metric, args.algorithm, args.evaluation, args.optimizer])
+                +"\t"+str(err).replace("\n","\t")
+                +"\n")
 
-        else:
-            with open(args.dboutput+"exec.csv", "a") as run:
-                run.write(args.dataset+"\t"+str(timer)+"\t"+"\t".join([args.distance_metric, args.algorithm, args.evaluation, args.optimizer])
-                    +"\t"+"\t".join([str(round(m,4)) for m in metrics])
-                    +"\t"+str(k_tests)
-                    +"\t"+":".join([str(len(np.where(clabels == l)[0])) for l in np.unique(clabels)])
-                    +"\n")
+    else:
+        with open(args.dboutput+"exec.csv", "a") as run:
+            run.write(args.dataset+"\t"+str(timer)+"\t"+"\t".join([args.distance_metric, args.algorithm, args.evaluation, args.optimizer])
+                +"\t"+"\t".join([str(round(m,4)) for m in metrics])
+                +"\t"+str(k_tests)
+                +"\t"+":".join([str(len(np.where(clabels == l)[0])) for l in np.unique(clabels)])
+                +"\n")
 
     print("[Process] Done!")
 

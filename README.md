@@ -4,11 +4,11 @@ An optimization method for clustering hyperparameters selection using internal v
 ## Requirements: 
 Docker Container Ubuntu 18.04
 
-- Python 3.6
+- Python 3
 
 - [Skopt](https://scikit-optimize.github.io/)
 
-- [Sklearn](https://flask.palletsprojects.com/)
+- [Sklearn](https://scikit-learn.org/stable/index.html)
 
 ## Container
 
@@ -26,7 +26,7 @@ docker pull marcosspalenza/clustering_opt
 Requires input and output directories volumes as following.
 
 ```
-docker run -v IN_DIR:/data/input -v OUT_DIR:/data/output/ clustering_opt:latest main_clustering.py DATASET
+docker run -v IN_DIR:/data/input/ -v OUT_DIR:/data/output/ clustering_opt:latest main_clustering.py DATASET
 ```
 
 Replace IN_DIR and OUT_DIR with your data path and DATASET with your database name.

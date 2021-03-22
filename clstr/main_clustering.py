@@ -75,7 +75,7 @@ __ALGORITHMS__ = [ "agglomerative"] # "spectral", "dbscan", "kmeans"
 
 
 # Optimizer
-__OPTIMIZERS__ = [ "gprocess", "dummy", "rdn_forest"] # "exhaustive"
+__OPTIMIZERS__ = [ "gprocess", "dummy", "dtree", "exhaustive"]
 
 
 
@@ -167,7 +167,7 @@ def main():
             ivi_ss = -1.0
             ivi_db = -1.0
             ivi_ch = -1.0
-            ivi_pm = -1.0
+            ivi_sse = -1.0
 
             clstr = Clustering(
                 data, args.dbinput, args.dboutput, n_clusters_ = args.k_clusters, metric_ = args.distance_metric,
@@ -182,13 +182,13 @@ def main():
             ivi_ss = clstr.__silhouette__(np.array(clabels))
             ivi_ch = clstr.__davies_bouldin__(np.array(clabels))
             ivi_db = clstr.__calinski_harabasz__(np.array(clabels))
-            ivi_pm = clstr.__pairwise_distance_mean__(np.array(clabels))
+            ivi_sse = clstr.__sse__(np.array(clabels))
             if len(labels) > 0 and len(labels) == len(clabels):
                 evi_ari = adjusted_rand_score(labels, clabels)
                 evi_nmi = normalized_mutual_info_score(labels, clabels)
                 evi_ca = cluster_accuracy(labels, clabels)
             print("[Process] Writing results.")
-            metrics = [ivi_ss, ivi_db, ivi_ch, ivi_pm, evi_nmi, evi_ari, evi_ca]
+            metrics = [ivi_ss, ivi_db, ivi_ch, ivi_sse, evi_nmi, evi_ari, evi_ca]
             with open(args.dboutput+"clusters.txt", "a") as out:
                 out.write(" ".join([str(c) for c in clabels]))
     except Exception as err:
@@ -201,6 +201,12 @@ def main():
                 +"\n")
 
     else:
+        if not os.path.isfile(args.dboutput+"exec.csv"):
+            with open(args.dboutput+"exec.csv", "w") as run:
+                csv_header = ["Dataset", "Time(min)", "Distance", "Algorithm", "Index", "Optimizer"
+                                "SS", "DBS", "CHS", "SSE", "NMI", "ARI", "CA", "Tests", "Clusters"]
+                run.write("\t".join(csv_header)+"\n")
+
         with open(args.dboutput+"exec.csv", "a") as run:
             run.write(args.dataset+"\t"+str(timer)+"\t"+"\t".join([args.distance_metric, args.algorithm, args.evaluation, args.optimizer])
                 +"\t"+"\t".join([str(round(m,4)) for m in metrics])

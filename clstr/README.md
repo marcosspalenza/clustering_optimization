@@ -38,6 +38,8 @@ Clustering algorithm. Default : `agglomerative`. The list containing supported a
 -e --evaluation, 
 Optimization measure using Clustering Internal Validity Indexes - IVI. Default : `silhouette`. All the validation measures included are presented in [Table 4](#table-ivi).
 
+-k --kclusters,
+Initial test for clustering optimization. The starter k are adjusted to the optimization's sampling space. Using k = 0 the tests start using a random value. Default : `0`.
 
 ## Format
 
@@ -96,7 +98,7 @@ Dense matrix format for samples x features data. All samples are represented usi
 
 | Optimizers    |                |                |
 |---------------|:--------------:|:--------------:|
-| gprocess      | rdn_forest     | dummy          |
+| gprocess      | dtree          | dummy          |
 
 <h4 id="table-ivi">
  Table 4. Internal Validity Indexes - IVI
@@ -107,3 +109,24 @@ Dense matrix format for samples x features data. All samples are represented usi
 | silhouette    | sse            | ch_score       | db_score       | cv_distance ³      | cv_size ³      |
 
 ***³ cv - evaluate the coefficient of variation (CV) of the clustering instances. The CV functions are the ratio of standard deviation and the mean of the retrieved values on cluster sizes (cv_size) or pairwise distances (cv_distance). ***
+
+- Silhouette Score
+
+- Sum of Squared Errors
+
+- Calinski-Harabazs Score
+
+- Davies-Bouldin Score
+
+- Coefficient of Variation : Intra-Cluster Distance
+
+- Coefficient of Variation : Cluster Sizes
+
+
+## References
+
+[Rousseeuw, Peter J. *“Silhouettes: a Graphical Aid to the Interpretation and Validation of Cluster Analysis”*. Computational and Applied Mathematics 20: 53-65. 1987.](https://www.sciencedirect.com/science/article/pii/0377042787901257)
+
+[Davies, David L.; Bouldin, Donald W. *“A Cluster Separation Measure”*. IEEE Transactions on Pattern Analysis and Machine Intelligence. PAMI-1 (2): 224-227. 1979.](https://ieeexplore.ieee.org/document/4766909)
+
+[Calinski, T.; Harabasz, J. *“A Dendrite Method for Cluster Analysis”*. Communications in Statistics. 1974.](https://www.tandfonline.com/doi/abs/10.1080/03610927408827101)

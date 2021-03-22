@@ -39,4 +39,4 @@ docker run clustering_opt:latest main_clustering.py --help
 ---
 
 ## Reference
-M. A. Spalenza, J. P. C. Pirovani, E. Oliveira. *“Structures Discovering for Optimizing External Clustering Validation Metrics.”* 19th. International Conference on Intelligent Systems Design and Applications (ISDA). 2019.
+[Spalenza, M. A.; Pirovani, J. P. C.; Oliveira E. *“Structures Discovering for Optimizing External Clustering Validation Metrics.”* 19th. International Conference on Intelligent Systems Design and Applications (ISDA). 2019.](https://link.springer.com/chapter/10.1007/978-3-030-49342-4_15)

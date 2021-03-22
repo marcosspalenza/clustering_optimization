@@ -40,17 +40,23 @@ class Clustering:
         else:
             self.outputpath = outputpath_
         self.optimization = optimization_
-        self.algorithm = algorithm_
-        self.n_clusters = n_clusters_
         self.labels = labels_
+        self.algorithm = algorithm_
         self.cluster_min = 2
         self.cluster_max = self.__choose_max_k__(np.shape(data_)[0])
+        if n_clusters_ < self.cluster_min:
+            self.n_clusters = self.cluster_min
+        elif n_clusters_ > self.cluster_max:
+            self.n_clusters = self.cluster_max
+        else:
+            self.n_clusters = n_clusters_
+
 
     def __choose_max_k__(self, dataset_size):
         '''
         [ Jiawei Han et.al. 2011 - Data Mining Concepts and Techniques]
         simple k_cluster guess method is [sqrt(dataset size/2)]
-        "elbow method", metric evaluation to define better results achieved for each k value.
+        'elbow method', metric evaluation to define better results achieved for each k value.
         '''
         k = int(round((dataset_size / 2) ** 0.5))
         if dataset_size < 5000:
@@ -68,18 +74,18 @@ class Clustering:
             clusters = [cluster_labels[i] for i in self.idxfocus]
             for c in np.unique(clusters):
                 cluster = np.where(clusters == c)[0]
-                centroid = np.mean(self.data[cluster, :], axis=0)
+                centroid = np.mean(self.data[cluster, :], axis=0).reshape(1, -1)
                 sim = 0
                 for c in cluster:
-                    sim += pairwise_distances(data_[c], centroid, metric="l2", n_jobs=None)[0, 0] # l2 - squared euclidean
+                    sim += pairwise_distances(self.data[c].reshape(1, -1), centroid, metric="l2", n_jobs=None)[0, 0] # l2 - squared euclidean
                 sse = sse + (sim/len(cluster))
         else:
             for c in np.unique(cluster_labels):
                 cluster = np.where(cluster_labels == c)[0]
-                centroid = np.mean(self.data[cluster, :], axis=0)
+                centroid = np.mean(self.data[cluster, :], axis=0).reshape(1, -1)
                 sim = 0
                 for c in cluster:
-                    sim += pairwise_distances(data_[c], centroid, metric="l2", n_jobs=None)[0, 0] # l2 - squared euclidean
+                    sim += pairwise_distances(self.data[c].reshape(1, -1), centroid, metric="l2", n_jobs=None)[0, 0] # l2 - squared euclidean
                 sse = sse + (sim/len(cluster))
         return sse
 
@@ -130,7 +136,7 @@ class Clustering:
                     cluster_dist.append(np.mean(sim))
                 else:
                     cluster_dist.append(0.0)
-        return np.std(cluster_dist)n/np.mean(cluster_dist)
+        return np.std(cluster_dist)/np.mean(cluster_dist)
 
     def __cv_size__(self, cluster_labels):
         cluster_size = []
@@ -143,7 +149,7 @@ class Clustering:
             for c in np.unique(cluster_labels):
                 cltr = np.where(cluster_labels == c)[0]
                 cluster_size.append(len(cltr))
-        return np.std(cluster_size)n/np.mean(cluster_size)
+        return np.std(cluster_size)/np.mean(cluster_size)
 
     """
     Algorithms
@@ -260,32 +266,15 @@ class Clustering:
             return None, -1
         return cluster_labels, len(np.unique(tests))
 
-    # def __transform_minmax(self, vector, train_method):
-    #     mmtext = []
-    #     if int(train_method) > 2:
-    #         for c, max_s, min_s, max_t, min_t in vector:
-    #             mmtext.append(str(c)+" maxsim "+" ".join(str(m) for m in max_s)+"\n")
-    #             mmtext.append(str(c)+" minsim "+" ".join(str(m) for m in min_s)+"\n")
-    #             mmtext.append(str(c)+" maxtam "+" ".join(str(m) for m in max_t)+"\n")
-    #             mmtext.append(str(c)+" mintam "+" ".join(str(m) for m in min_t)+"\n")
-    #     elif int(train_method) > 1:
-    #         for c, max_s, min_s in vector:
-    #             mmtext.append(str(c)+" maxsim "+" ".join(str(m) for m in max_s)+"\n")
-    #             mmtext.append(str(c)+" minsim "+" ".join(str(m) for m in min_s)+"\n")
-    #     elif int(train_method) > 0:
-    #         for c, max_s in vector:
-    #             mmtext.append(str(c)+" maxsim "+" ".join(str(m) for m in max_s)+"\n")
-    #     return mmtext
-
     def __optimize_n_clusters__(self):
-        grad_desc = ['sgd', 'gprocess', 'rdn_forest', 'exhaustive', 'dummy']
         max_iter = self.cluster_max - self.cluster_min
-        max_iter = int(0.5 * (self.cluster_max - self.cluster_min)) # max optimizator cicles for half of 'self.cluster_max' exhaustive cicles
-        
-        if self.method == "exhaustive" or max_iter < 15:
+        ntests = 0.5 * (self.cluster_max - self.cluster_min)
+
+        if self.method == "exhaustive" or max_iter < 30:
+            # No-Optimize Full Test
             result = self.__cluster_metric__(self.cluster_min)
             best = self.cluster_min
-            for k_val in range(self.cluster_min+1, max_iter):
+            for k_val in range(self.cluster_min, self.cluster_max):
                 run_result = self.__cluster_metric__([k_val])
                 if run_result < result:
                     result = run_result
@@ -293,47 +282,38 @@ class Clustering:
             return result, best, self.cluster_max - self.cluster_min
         
         elif self.method == "gprocess":
-            # Gaussian Distribution Optimization
+            # Gaussian Opt.
             # gp_minimize is a gaussian implementation similar to sklearn GridSearch
-            res = gp_minimize(self.__cluster_metric__, [(self.cluster_min, self.cluster_max)], n_calls=max_iter)
+            res = gp_minimize(self.__cluster_metric__, [(self.cluster_min, self.cluster_max)], n_calls=ntests)
             # res.fun #score
             # res.func_vals #all tested scores
             return res.fun, res.x[0], res.x_iters
 
-        elif self.method == "rdn_forest":
+        elif self.method == "dtree":
             # Decision Tree Opt.
-            res = forest_minimize(self.__cluster_metric__, [(self.cluster_min, self.cluster_max)], base_estimator='RF', n_calls=max_iter)
+            res = forest_minimize(self.__cluster_metric__, [(self.cluster_min, self.cluster_max)], base_estimator='RF', n_calls=ntests)
             # res.fun #score
             # res.func_vals #all tested scores
             return res.fun, res.x[0], res.x_iters
 
         elif self.method == "dummy":
-            res = dummy_minimize(self.__cluster_metric__, [(self.cluster_min, self.cluster_max)], n_calls=max_iter)
+            # Random Opt.
+            res = dummy_minimize(self.__cluster_metric__, [(self.cluster_min, self.cluster_max)], n_calls=ntests)
             return res.fun, res.x[0], res.x_iters
-
-        # elif self.method == "sgd":
-        #     # 
-        #     res = sp.optimize.minimize(self.__cluster_metric__, int((self.cluster_max - self.cluster_min)/2), method='CG')
-        #     print(res)
-        #     return res.fun, res.x[0]
-
-
-        # need to be checked "res.x_iters" on scipy modules
-        #else:
-        #    res = sp.optimize.minimize(self.__cluster_metric__, int((self.cluster_max - self.cluster_min)/2), bounds=(self.cluster_min, self.cluster_max), method=self.method) #,  n_calls=max_iter)
-        #    return res.fun, res.x[0], res.x_iters
 
     def __cluster_metric__(self, k_value):
 
-        #Deal with the return format at skopt
+        # Collect the return from skopt
         if type(k_value) == list:
             self.n_clusters = k_value[0]
         else:
             self.n_clusters = k_value
         # print(self.n_clusters)
         warnings.filterwarnings('ignore', message='The objective has been evaluated at this point before.')
+        
+
         """
-        The clustering algorithm to be chosen in the object construction
+        The clustering algorithm chosen in the object construction
         """
         # if self.algorithm == "cluto":
         #     try:

@@ -268,7 +268,7 @@ class Clustering:
 
     def __optimize_n_clusters__(self):
         max_iter = self.cluster_max - self.cluster_min
-        ntests = 0.5 * (self.cluster_max - self.cluster_min)
+        ntests = int(0.5 * (self.cluster_max - self.cluster_min))
 
         if self.method == "exhaustive" or max_iter < 30:
             # No-Optimize Full Test

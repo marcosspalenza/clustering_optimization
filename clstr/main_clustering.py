@@ -93,7 +93,7 @@ Warnning:
 """
 __METRICS__ = ['cityblock', 'cosine', 'euclidean', 'l1', 'l2', 'manhattan',
           'braycurtis', 'canberra', 'chebyshev','correlation', 'dice', 'hamming',
-          'jaccard', 'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto',
+          'jaccard', 'kulsinski', 'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
           'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
           'yule']
 
@@ -135,6 +135,10 @@ def main():
     # Check libraries' warnings
     # with warnings.catch_warnings():
     #     warnings.simplefilter("ignore")
+    timer = 0.
+    metrics = []
+    k_tests = 0
+    clabels = []
     try:
         data = []
         if os.stat(args.dbinput+args.dataset):
@@ -157,10 +161,7 @@ def main():
             print("[Process] Generating Clustering module.")
             start_time = time.time()
 
-            timer = 0.
-            clabels = []
             clstr = None
-
             evi_nmi = -1.0
             evi_ari = -1.0
             evi_ca = -1.0

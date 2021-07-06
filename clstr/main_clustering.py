@@ -191,7 +191,7 @@ def main():
             print("[Process] Writing results.")
             metrics = [ivi_ss, ivi_db, ivi_ch, ivi_sse, evi_nmi, evi_ari, evi_ca]
             with open(args.dboutput+"clusters.txt", "a") as out:
-                out.write(" ".join([str(c) for c in clabels]))
+                out.write(" ".join([str(c) for c in clabels])+"\n")
     except Exception as err:
         print("[Error] "+str(err))
         with open(args.dboutput+"exceptions.csv", "a") as out:

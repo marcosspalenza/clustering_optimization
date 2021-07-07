@@ -204,7 +204,7 @@ def main():
     else:
         if not os.path.isfile(args.dboutput+"exec.csv"):
             with open(args.dboutput+"exec.csv", "w") as run:
-                csv_header = ["Dataset", "Time(min)", "Distance", "Algorithm", "Index", "Optimizer"
+                csv_header = ["Dataset", "Time(min)", "Distance", "Algorithm", "Index", "Optimizer",
                                 "SS", "DBS", "CHS", "SSE", "NMI", "ARI", "CA", "Tests", "Clusters"]
                 run.write("\t".join(csv_header)+"\n")
 

@@ -136,6 +136,8 @@ class Clustering:
                     cluster_dist.append(np.mean(sim))
                 else:
                     cluster_dist.append(0.0)
+        if np.mean(cluster_dist) == 0:
+            return 0
         return np.std(cluster_dist)/np.mean(cluster_dist)
 
     def __cv_size__(self, cluster_labels):
@@ -149,6 +151,8 @@ class Clustering:
             for c in np.unique(cluster_labels):
                 cltr = np.where(cluster_labels == c)[0]
                 cluster_size.append(len(cltr))
+        if np.mean(cluster_size) == 0:
+            return 0
         return np.std(cluster_size)/np.mean(cluster_size)
 
     """

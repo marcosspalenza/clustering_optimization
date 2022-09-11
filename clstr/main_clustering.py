@@ -9,6 +9,42 @@ from cluster_information import Clustering
 from sklearn.preprocessing import MinMaxScaler, MultiLabelBinarizer
 from sklearn.metrics import  pairwise_distances, normalized_mutual_info_score, adjusted_rand_score, accuracy_score
 
+
+"""
+GLOBALS
+"""
+# Clustering
+__ALGORITHMS = [ "agglomerative"] # "spectral", "dbscan", "kmeans"
+
+
+# Optimizer
+__OPTIMIZERS = [ "gprocess", "dummy", "dtree", "exhaustive"]
+
+# Internal Clustering Validation Measures
+__IV_INDEXES = ["silhouette", "ch_score", "db_score", "sse", "cv_size", "cv_distance"]
+
+# Distance Affinity Metrics
+"""
+Warnning:
+- The following metrics are simetric to other traditional distances : "cityblock", "l1", "l2" ~ "manhattan", "euclidean", "sqeuclidean"
+- The following metrics are weighted and not addapted on system recognition format : "yule", "wminkowski".
+
+
+# __METRICS = [dist for dist in pairwise_distances.__globals__["_VALID_METRICS"]] # deprecated global
+"""
+__METRICS = ['cityblock', 'cosine', 'euclidean', 'l1', 'l2', 'manhattan',
+          'braycurtis', 'canberra', 'chebyshev','correlation', 'dice', 'hamming',
+          'jaccard', 'kulsinski', 'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
+          'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
+          'yule']
+
+"""
+External Clustering Validation Measures
+"""
+__EV_INDEXES =["ARI", "NMI", "CA"]
+#"nmi", "ari", "max_pairwise","min_pairwise"
+
+
 def load_labels(filename, pathto="./data/IN/", header=0):
     labels = []
     with open(pathto+filename, 'r') as fh:
@@ -18,6 +54,7 @@ def load_labels(filename, pathto="./data/IN/", header=0):
         docs = fh.read()
         labels = [l for l in docs.split("\n") if l != ""]
     return labels
+
 
 def load_matrix(filename, fformat, pathto="./data/IN/", fsep=" ", header=1):
     data = []
@@ -53,6 +90,7 @@ def load_matrix(filename, fformat, pathto="./data/IN/", fsep=" ", header=1):
     else:
         print("Unexpected File Format.")
 
+
 """
 Analyze cluster labels to parse cluster_id in max vote labels
 """
@@ -67,41 +105,6 @@ def cluster_accuracy(true_labels, clusters):
             cluster_classes[sid] = cltr_class
     return accuracy_score(labels, cluster_classes)
 
-"""
-GLOBALS
-"""
-# Clustering
-__ALGORITHMS__ = [ "agglomerative"] # "spectral", "dbscan", "kmeans"
-
-
-# Optimizer
-__OPTIMIZERS__ = [ "gprocess", "dummy", "dtree", "exhaustive"]
-
-
-
-# Internal Clustering Validation Measures
-__IV_INDEXES__ = ["silhouette", "ch_score", "db_score", "sse", "cv_size", "cv_distance"]
-
-# Distance Affinity Metrics
-"""
-Warnning:
-- The following metrics are simetric to other traditional distances : "cityblock", "l1", "l2" ~ "manhattan", "euclidean", "sqeuclidean"
-- The following metrics are weighted and not addapted on system recognition format : "yule", "wminkowski".
-
-
-# __METRICS__ = [dist for dist in pairwise_distances.__globals__["_VALID_METRICS"]] # deprecated global
-"""
-__METRICS__ = ['cityblock', 'cosine', 'euclidean', 'l1', 'l2', 'manhattan',
-          'braycurtis', 'canberra', 'chebyshev','correlation', 'dice', 'hamming',
-          'jaccard', 'kulsinski', 'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
-          'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
-          'yule']
-
-"""
-External Clustering Validation Measures
-"""
-__EV_INDEXES__ =["ARI", "NMI", "CA"]
-#"nmi", "ari", "max_pairwise","min_pairwise"
 
 def main():
     parser = argparse.ArgumentParser(usage="%(prog)s [options] <dataset>", description="Clustering optimization by distance metrics and internal validity indexes.")
@@ -121,10 +124,10 @@ def main():
     args = parser.parse_args()
 
     assert args.dbformat == "sparse" or args.dbformat == "dense", "Invalid matrix format"
-    assert args.distance_metric in __METRICS__, "A invalid distance metric was selected"
-    assert args.algorithm in __ALGORITHMS__, "This clustering algorithm currently not supported"
-    assert args.optimizer in __OPTIMIZERS__, "This optimizer currently not avaliable"
-    assert args.evaluation in __IV_INDEXES__, "Internal Validity Index not found."
+    assert args.distance_metric in __METRICS, "A invalid distance metric was selected"
+    assert args.algorithm in __ALGORITHMS, "This clustering algorithm currently not supported"
+    assert args.optimizer in __OPTIMIZERS, "This optimizer currently not avaliable"
+    assert args.evaluation in __IV_INDEXES, "Internal Validity Index not found."
     assert args.dbinput != "" and args.dboutput != "", "Insert a valid input and output folder."
 
     if args.distance_metric in ["yule", "wminkowski"]:
@@ -180,10 +183,11 @@ def main():
             print("[Process] Evaluating Clusters.")
             timer = (time.time() - start_time) / 60
 
-            ivi_ss = clstr.__silhouette__(np.array(clabels))
-            ivi_ch = clstr.__davies_bouldin__(np.array(clabels))
-            ivi_db = clstr.__calinski_harabasz__(np.array(clabels))
-            ivi_sse = clstr.__sse__(np.array(clabels))
+            ivi_ss = clstr.__silhouette(np.array(clabels))
+            ivi_ch = clstr.__davies_bouldin(np.array(clabels))
+            ivi_db = clstr.__calinski_harabasz(np.array(clabels))
+            ivi_sse = clstr.__sse(np.array(clabels))
+            ivi_csz = clstr.__cv_size(np.array(clabels))
             if len(labels) > 0 and len(labels) == len(clabels):
                 evi_ari = adjusted_rand_score(labels, clabels)
                 evi_nmi = normalized_mutual_info_score(labels, clabels)
@@ -216,6 +220,7 @@ def main():
                 +"\n")
 
     print("[Process] Done!")
+
 
 if __name__=="__main__":
     main()

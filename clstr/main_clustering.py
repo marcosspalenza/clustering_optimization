@@ -172,6 +172,7 @@ def main():
             ivi_db = -1.0
             ivi_ch = -1.0
             ivi_sse = -1.0
+            ivi_cvs = -1.0
 
             clstr = Clustering(
                 data, args.dbinput, args.dboutput, n_clusters_ = args.k_clusters, metric_ = args.distance_metric,
@@ -187,13 +188,13 @@ def main():
             ivi_ch = clstr.__davies_bouldin(np.array(clabels))
             ivi_db = clstr.__calinski_harabasz(np.array(clabels))
             ivi_sse = clstr.__sse(np.array(clabels))
-            ivi_csz = clstr.__cv_size(np.array(clabels))
+            ivi_cvs = clstr.__cv_size(np.array(clabels))
             if len(labels) > 0 and len(labels) == len(clabels):
                 evi_ari = adjusted_rand_score(labels, clabels)
                 evi_nmi = normalized_mutual_info_score(labels, clabels)
                 evi_ca = cluster_accuracy(labels, clabels)
             print("[Process] Writing results.")
-            metrics = [ivi_ss, ivi_db, ivi_ch, ivi_sse, evi_nmi, evi_ari, evi_ca]
+            metrics = [ivi_ss, ivi_db, ivi_ch, ivi_sse, ivi_cvs, evi_nmi, evi_ari, evi_ca]
             with open(args.dboutput+"clusters.txt", "a") as out:
                 out.write(" ".join([str(c) for c in clabels])+"\n")
     except Exception as err:
@@ -208,8 +209,10 @@ def main():
     else:
         if not os.path.isfile(args.dboutput+"exec.csv"):
             with open(args.dboutput+"exec.csv", "w") as run:
-                csv_header = ["Dataset", "Time(min)", "Distance", "Algorithm", "Index", "Optimizer",
-                                "SS", "DBS", "CHS", "SSE", "NMI", "ARI", "CA", "Tests", "Clusters"]
+                csv_header = [
+                    "Dataset", "Time(min)", "Distance", "Algorithm", "Index", "Optimizer",
+                    "SS", "DBS", "CHS", "SSE", "CVS", "NMI", "ARI", "CA", "Tests", "Clusters"
+                ]
                 run.write("\t".join(csv_header)+"\n")
 
         with open(args.dboutput+"exec.csv", "a") as run:

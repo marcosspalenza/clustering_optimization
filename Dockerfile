@@ -1,7 +1,7 @@
-#Set base image to Ubuntu
-FROM ubuntu:18.04
+# Set base image to Ubuntu
+FROM ubuntu:20.04
 
-#File / Author Maintainer
+# File / Author Maintainer
 MAINTAINER Marcos Spalenza
 
 RUN apt-get update -y && \ 
@@ -13,10 +13,10 @@ RUN pip3 install -U sklearn
 
 RUN pip3 install -U scikit-optimize
 
-#Add clustering script
+# Add clustering script
 ADD ./clstr/ /app/
 
-#set path to /app/
+# Set path to /app/
 WORKDIR /app/
 
 RUN mkdir /data/
@@ -24,5 +24,3 @@ RUN mkdir /data/
 RUN mkdir /data/input/
 
 RUN mkdir /data/output/
-
-ENTRYPOINT [ "python3" ]

@@ -22,6 +22,7 @@ class Data:
 
 
 class Clustering:
+
     def __init__(self, data_, matrixpath_, outputpath_=None, distance_=None, metric_="cosine", n_clusters_=0, optimization_="silhouette", algorithm_="spectral", method_="gprocess", labels_=[], idxfocus_=None):
         self.data = data_
         if distance_ == [] or distance_ == None:
@@ -41,7 +42,7 @@ class Clustering:
         self.labels = labels_
         self.algorithm = algorithm_
         self.cluster_min = 2
-        self.cluster_max = self.__choose_max_k(np.shape(data_)[0])
+        self.cluster_max = self._choose_max_k(np.shape(data_)[0])
         if n_clusters_ < self.cluster_min:
             self.n_clusters = self.cluster_min
         elif n_clusters_ > self.cluster_max:
@@ -50,7 +51,7 @@ class Clustering:
             self.n_clusters = n_clusters_
 
 
-    def __choose_max_k(self, dataset_size):
+    def _choose_max_k(self, dataset_size):
         '''
         [ Jiawei Han et.al. 2011 - Data Mining Concepts and Techniques]
         simple k_cluster guess method is [sqrt(dataset size/2)]
@@ -65,7 +66,7 @@ class Clustering:
     """
     Evaluation
     """
-    def __sse(self, cluster_labels):
+    def _sse(self, cluster_labels):
         # Initialise Sum of Squared Errors
         # add self.idxfocus method
         sse = 0
@@ -89,14 +90,14 @@ class Clustering:
         return sse
 
 
-    def __silhouette(self, cluster_labels):
+    def _silhouette(self, cluster_labels):
         if self.idxfocus != None:
             return silhouette_score(self.distance_mtx[self.idxfocus, :][:, self.idxfocus], cluster_labels[self.idxfocus], metric="precomputed")
         else:
             return silhouette_score(self.distance_mtx, cluster_labels, metric="precomputed")
 
 
-    def __davies_bouldin(self, cluster_labels):
+    def _davies_bouldin(self, cluster_labels):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             if self.idxfocus != None:
@@ -105,14 +106,14 @@ class Clustering:
                 return davies_bouldin_score(self.data, cluster_labels)
 
 
-    def __calinski_harabasz(self, cluster_labels):
+    def _calinski_harabasz(self, cluster_labels):
         if self.idxfocus != None:
             return calinski_harabasz_score(self.data[self.idxfocus, :], cluster_labels[self.idxfocus])
         else:
             return calinski_harabasz_score(self.data, cluster_labels)
 
     
-    def __cv_distance(self, cluster_labels):
+    def _cv_distance(self, cluster_labels):
         cluster_dist = []
         if self.idxfocus != None:
             clusters = [cluster_labels[i] for i in self.idxfocus]
@@ -144,8 +145,8 @@ class Clustering:
         return np.std(cluster_dist)/np.mean(cluster_dist)
 
 
-    def __cv_size(self, cluster_labels):
-        cluster_size
+    def _cv_size(self, cluster_labels):
+        cluster_size = []
         if self.idxfocus != None:
             clusters = [cluster_labels[i] for i in self.idxfocus]
             for c in np.unique(clusters):
@@ -165,15 +166,15 @@ class Clustering:
     """
     ## algorithms:  'cluto', 'libDocumento', 'agglomerative', 'spectral', 'kmeans', 'minibatch', 'birch', 'affinity', 'dbscan'
 
-    def __run_agglomerative(self):
+    def _run_agglomerative(self):
         return AgglomerativeClustering(n_clusters=self.n_clusters, linkage="complete", affinity="precomputed").fit_predict(self.distance_mtx)
 
 
-    def __run_spectral(self):
+    def _run_spectral(self):
         return SpectralClustering(n_clusters=self.n_clusters, eigen_solver=None, affinity="precomputed").fit_predict(self.distance_mtx)
 
 
-    def __run_dbscan(self):
+    def _run_dbscan(self):
         """
         DBSCAN cannot integrate the module to solve all problems using its default configuration.
         The proximity distance method sometimes return as result all negative (outliers) or single cluster values.
@@ -185,12 +186,12 @@ class Clustering:
         >>> [0, 0, 0, ..., 0, 0, 0]
         In both cases we solve throwing a null vector as result [], this approach needs to be solved in an upper level (caller).
         """
-
-        #float(1/self.n_clusters) may be evaluated by some tests to prove efficiency
+        # float(1/self.n_clusters) may be evaluated by some tests to prove efficiency
         labels =  DBSCAN(eps=float(1/self.n_clusters), metric="precomputed").fit_predict(self.distance_mtx)
         return labels
 
-    # def __run_cluto(self):
+
+    # def _run_cluto(self):
     #     '''
     #     CLUTO official page
     #     http://glaros.dtc.umn.edu/gkhome/cluto/cluto/overview
@@ -208,7 +209,7 @@ class Clustering:
     #         return []
     #     return [int(t) for t in self.read_document("values.mtx.clustering."+str(self.n_clusters), self.matrixpath).split("\n") if t != ""]
 
-    # def __run_libDocumento(self, iterations=100):
+    # def _run_libDocumento(self, iterations=100):
     #     # libDocumento have to be in the same path
     #     code_path = os.path.realpath(__file__)[:-os.path.realpath(__file__)[::-1].find("/")]
     #     if self.metric == "cosine":
@@ -219,7 +220,7 @@ class Clustering:
     #         return []
     #     return [int(t) for t in self.read_document("output.clustering", self.matrixpath).split("\n") if t != ""]
 
-    # def __run_kmeans(self):
+    # def _run_kmeans(self):
     #     scores = []
     #     # all_distances, model_predictions, losses, is_initialized, init_op, training_op
     #     if self.metric == "cosine":
@@ -259,33 +260,33 @@ class Clustering:
         # if self.algorithm == "cluto":
         #     self.save_matrix('values.mtx', self.data, self.matrixpath)
         # cluster_labels = []
-        score, self.n_clusters, tests = self.__optimize_n_clusters()
+        score, self.n_clusters, tests = self._optimize_n_clusters()
         # if self.algorithm == "cluto":
-        #     cluster_labels = self.__run_cluto()
+        #     cluster_labels = self._run_cluto()
         # elif self.algorithm == "libDocumento":
-        #     cluster_labels = self.__run_libDocumento()
+        #     cluster_labels = self._run_libDocumento()
         if self.algorithm == "agglomerative":
-            cluster_labels = self.__run_agglomerative()
+            cluster_labels = self._run_agglomerative()
         elif self.algorithm == "spectral":
-            cluster_labels = self.__run_spectral()
+            cluster_labels = self._run_spectral()
         elif self.algorithm == "kmeans":
-            cluster_labels = self.__run_kmeans()
+            cluster_labels = self._run_kmeans()
         elif self.algorithm == "dbscan":
-            cluster_labels = self.__run_dbscan()
+            cluster_labels = self._run_dbscan()
         else:
             return None, -1
         return cluster_labels, len(np.unique(tests))
 
 
-    def __optimize_n_clusters(self):
+    def _optimize_n_clusters(self):
         max_iter = self.cluster_max - self.cluster_min
         ntests = int(0.5 * (self.cluster_max - self.cluster_min))
         if self.method == "exhaustive" or max_iter < 30:
             # No-Optimize Full Test
-            result = self.__cluster_metric(self.cluster_min)
+            result = self._cluster_metric(self.cluster_min)
             best = self.cluster_min
             for k_val in range(self.cluster_min, self.cluster_max):
-                run_result = self.__cluster_metric([k_val])
+                run_result = self._cluster_metric([k_val])
                 if run_result < result:
                     result = run_result
                     best = k_val
@@ -293,23 +294,23 @@ class Clustering:
         elif self.method == "gprocess":
             # Gaussian Opt.
             # gp_minimize is a gaussian implementation similar to sklearn GridSearch
-            res = gp_minimize(self.__cluster_metric, [(self.cluster_min, self.cluster_max)], n_calls=ntests)
+            res = gp_minimize(self._cluster_metric, [(self.cluster_min, self.cluster_max)], n_calls=ntests)
             # res.fun #score
             # res.func_vals #all tested scores
             return res.fun, res.x[0], res.x_iters
         elif self.method == "dtree":
             # Decision Tree Opt.
-            res = forest_minimize(self.__cluster_metric, [(self.cluster_min, self.cluster_max)], base_estimator='RF', n_calls=ntests)
+            res = forest_minimize(self._cluster_metric, [(self.cluster_min, self.cluster_max)], base_estimator='RF', n_calls=ntests)
             # res.fun #score
             # res.func_vals #all tested scores
             return res.fun, res.x[0], res.x_iters
         elif self.method == "dummy":
             # Random Opt.
-            res = dummy_minimize(self.__cluster_metric, [(self.cluster_min, self.cluster_max)], n_calls=ntests)
+            res = dummy_minimize(self._cluster_metric, [(self.cluster_min, self.cluster_max)], n_calls=ntests)
             return res.fun, res.x[0], res.x_iters
 
 
-    def __cluster_metric(self, k_value):
+    def _cluster_metric(self, k_value):
         # Collect the return from skopt
         if type(k_value) == list:
             self.n_clusters = k_value[0]
@@ -319,22 +320,22 @@ class Clustering:
         # The clustering algorithm chosen in the object construction
         # if self.algorithm == "cluto":
         #     try:
-        #         cluster_labels = self.__run_cluto()
+        #         cluster_labels = self._run_cluto()
         #     except Exception as e:
         #         print("[ERROR] An error occoured while we tried to call CLUTO")
         # elif self.algorithm == "libDocumento":
         #     try:
-        #         cluster_labels = self.__run_libDocumento()
+        #         cluster_labels = self._run_libDocumento()
         #     except Exception as e:
         #         print("[ERROR] An error occoured while we tried to call libDocumento clustering")
         if self.algorithm == "agglomerative":
-            cluster_labels = self.__run_agglomerative()
+            cluster_labels = self._run_agglomerative()
         elif self.algorithm == "spectral":
-            cluster_labels = self.__run_spectral()
+            cluster_labels = self._run_spectral()
         elif self.algorithm == "dbscan":
-            cluster_labels = self.__run_dbscan()
+            cluster_labels = self._run_dbscan()
         elif self.algorithm == "kmeans":
-            cluster_labels = self.__run_kmeans()
+            cluster_labels = self._run_kmeans()
         # Use one of the following methods to optimize clustering parameters
         if self.optimization == "nmi":
             with warnings.catch_warnings():
@@ -343,17 +344,17 @@ class Clustering:
         elif self.optimization == "ari":
             return -1 * adjusted_rand_score(self.labels, cluster_labels)
         elif self.optimization == "sse":
-            return self.__sse(cluster_labels)
+            return self._sse(cluster_labels)
         elif self.optimization == "cv_size":
-            return self.__cv_size(cluster_labels)
+            return self._cv_size(cluster_labels)
         elif self.optimization == "cv_distance":
-            return self.__cv_distance(cluster_labels)
+            return self._cv_distance(cluster_labels)
         elif self.optimization == "ch_score":
-            return self.__calinski_harabasz(cluster_labels)
+            return self._calinski_harabasz(cluster_labels)
         elif self.optimization == "db_score":
-            return self.__davies_bouldin(cluster_labels)
+            return self._davies_bouldin(cluster_labels)
         elif self.optimization =="silhouette":
-            return -1 * self.__silhouette(cluster_labels) # silhoutte score
+            return -1 * self._silhouette(cluster_labels) # silhoutte score
         return None
 
 

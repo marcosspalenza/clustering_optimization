@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import datetime
 import warnings
 import argparse
 import scipy as sp
@@ -14,14 +15,14 @@ from sklearn.metrics import  pairwise_distances, normalized_mutual_info_score, a
 GLOBALS
 """
 # Clustering
-__ALGORITHMS = [ "agglomerative"] # "spectral", "dbscan", "kmeans"
+_ALGORITHMS = [ "agglomerative"] # "spectral", "dbscan", "kmeans"
 
 
 # Optimizer
-__OPTIMIZERS = [ "gprocess", "dummy", "dtree", "exhaustive"]
+_OPTIMIZERS = [ "gprocess", "dummy", "dtree", "exhaustive"]
 
 # Internal Clustering Validation Measures
-__IV_INDEXES = ["silhouette", "ch_score", "db_score", "sse", "cv_size", "cv_distance"]
+_IV_INDEXES = ["silhouette", "ch_score", "db_score", "sse", "cv_size", "cv_distance"]
 
 # Distance Affinity Metrics
 """
@@ -30,65 +31,64 @@ Warnning:
 - The following metrics are weighted and not addapted on system recognition format : "yule", "wminkowski".
 
 
-# __METRICS = [dist for dist in pairwise_distances.__globals__["_VALID_METRICS"]] # deprecated global
+# _METRICS = [dist for dist in pairwise_distances.__globals__["_VALID_METRICS"]] # deprecated global
 """
-__METRICS = ['cityblock', 'cosine', 'euclidean', 'l1', 'l2', 'manhattan',
-          'braycurtis', 'canberra', 'chebyshev','correlation', 'dice', 'hamming',
-          'jaccard', 'kulsinski', 'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
-          'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
-          'yule']
+_METRICS = [
+    'cityblock', 'cosine', 'euclidean', 'l1', 'l2', 'manhattan',
+    'braycurtis', 'canberra', 'chebyshev','correlation', 'dice', 'hamming',
+    'jaccard', 'kulsinski', 'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
+    'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
+    'yule'
+]
 
 """
 External Clustering Validation Measures
 """
-__EV_INDEXES =["ARI", "NMI", "CA"]
+_EV_INDEXES =["ARI", "NMI", "CA"]
 #"nmi", "ari", "max_pairwise","min_pairwise"
 
 
 def load_labels(filename, pathto="./data/IN/", header=0):
     labels = []
     with open(pathto+filename, 'r') as fh:
-        while header > 0:
-            var = fh.readline()
-            header = header - 1
-        docs = fh.read()
-        labels = [l for l in docs.split("\n") if l != ""]
+        docs = fh.read().split('\n')
+    while header > 0:
+        docs = docs[1:]
+        header = header - 1
+    labels = [l for l in docs if l != ""]
     return labels
 
 
 def load_matrix(filename, fformat, pathto="./data/IN/", fsep=" ", header=1):
     data = []
     if fformat == "dense":
+        docs = []
         with open(pathto+filename, 'r') as fh:
-            head = []
-            while header > 0:
-                head.append(fh.readline())
-                header = header - 1
-            docs = fh.read()
-            try:
-                data = np.array([[float(l) for l in line.split(fsep)] for line in docs.split("\n") if line != ""])
-            except Exception as err:
-                print("[Error] Data I/O problems. "+str(err))
-        return data
+            docs = fh.read().split('\n')    
+        head = docs[ : header]
+        docs = docs[header : ]
+        try:
+            data = np.array([[float(l) for l in line.split(fsep)] for line in docs if line != ""])
+        except Exception as err:
+            print("[Error] Data I/O problems. "+str(err))
     elif fformat == "sparse":
         with open(pathto+filename, 'r') as fh:
-            head = []
-            while header > 0:
-                head.append(fh.readline())
-                header = header - 1
-            docid = head[-1]
-            docs = fh.read()
-            try:
-                data = np.zeros((int(docid.split(fsep)[0]), int(docid.split(fsep)[1])))
-                for n in docs.split("\n"):
-                    if n != "":
-                        id1, id2, n = n.split(fsep)
-                        data[int(id1)-1, int(id2)-1] = float(n)
-            except Exception as err:
-                print("[Error] Data I/O problems. "+str(err))
-        return data
+            docs = fh.read().split('\n')    
+        head = docs[ : header]
+        docs = docs[header : ]
+        docid = head[-1]
+        try:
+            data = np.zeros((int(docid.split(fsep)[0]), int(docid.split(fsep)[1])))
+            for n in docs:
+                if n != "":
+                    id1, id2, n = n.split(fsep)
+                    data[int(id1)-1, int(id2)-1] = float(n)
+        except Exception as err:
+            print("[Error] Data I/O problems. "+str(err))
     else:
         print("Unexpected File Format.")
+        return None
+    return data
 
 
 """
@@ -114,20 +114,20 @@ def main():
     parser.add_argument("-l", "--labels", type=str, dest="dblabels", default="", help="Dataset single column labels. Default : None")
     parser.add_argument("-s", "--sheader", type=int, dest="size_header", default=1, help="Dataset files header size. Default : 1.")
     parser.add_argument("-f", "--format", type=str, dest="dbformat", default="dense", help="Dataset input format. [Matrix Market (sparse), Dense Matrix (dense)]. Default : 'dense'.")
-    parser.add_argument("-d", "--distance", type=str, dest="distance_metric", default="euclidean", help="Distance metric for samples' affinity evaluation \n"+"\t-".join(__METRICS__))
+    parser.add_argument("-d", "--distance", type=str, dest="distance_metric", default="euclidean", help="Distance metric for samples' affinity evaluation \n"+"\t-".join(_METRICS))
     # Distance matrix not supported in this version
-    parser.add_argument("-a", "--algorithm", type=str, dest="algorithm", default="agglomerative", help="Clustering algorithm. Default ': agglomerative. '. \n"+"-".join(__ALGORITHMS__))
+    parser.add_argument("-a", "--algorithm", type=str, dest="algorithm", default="agglomerative", help="Clustering algorithm. Default ': agglomerative. '. \n"+"-".join(_ALGORITHMS))
     # Algorithms' choice not supported in this version
-    parser.add_argument("-t", "--optimizer", type=str, dest="optimizer", default="gprocess", help="Optimizer algorithm. Default : 'gprocess'. \n"+"-".join(__OPTIMIZERS__))
-    parser.add_argument("-e", "--evaluation", type=str, dest="evaluation", default="silhouette", help="Optimization measure using Clustering Internal Validity Indexes. Default : 'silhouette'. \n"+"-".join(__IV_INDEXES__))
+    parser.add_argument("-t", "--optimizer", type=str, dest="optimizer", default="gprocess", help="Optimizer algorithm. Default : 'gprocess'. \n"+"-".join(_OPTIMIZERS))
+    parser.add_argument("-e", "--evaluation", type=str, dest="evaluation", default="silhouette", help="Optimization measure using Clustering Internal Validity Indexes. Default : 'silhouette'. \n"+"-".join(_IV_INDEXES))
     parser.add_argument("-k", "--kclusters", type=int, dest="k_clusters", default=0, help="Initial k value tested as the optimization starter")
     args = parser.parse_args()
 
     assert args.dbformat == "sparse" or args.dbformat == "dense", "Invalid matrix format"
-    assert args.distance_metric in __METRICS, "A invalid distance metric was selected"
-    assert args.algorithm in __ALGORITHMS, "This clustering algorithm currently not supported"
-    assert args.optimizer in __OPTIMIZERS, "This optimizer currently not avaliable"
-    assert args.evaluation in __IV_INDEXES, "Internal Validity Index not found."
+    assert args.distance_metric in _METRICS, "A invalid distance metric was selected"
+    assert args.algorithm in _ALGORITHMS, "This clustering algorithm currently not supported"
+    assert args.optimizer in _OPTIMIZERS, "This optimizer currently not avaliable"
+    assert args.evaluation in _IV_INDEXES, "Internal Validity Index not found."
     assert args.dbinput != "" and args.dboutput != "", "Insert a valid input and output folder."
 
     if args.distance_metric in ["yule", "wminkowski"]:
@@ -163,7 +163,6 @@ def main():
             print("[Process] Dataset Loaded. Size : "+str(data.shape))
             print("[Process] Generating Clustering module.")
             start_time = time.time()
-
             clstr = None
             evi_nmi = -1.0
             evi_ari = -1.0
@@ -173,7 +172,17 @@ def main():
             ivi_ch = -1.0
             ivi_sse = -1.0
             ivi_cvs = -1.0
-
+            if not os.path.isfile(args.dboutput+"exec.csv"):
+                output = (
+                    "\t".join([
+                        "Dataset", "Date", "Time(min)", "Distance", "Algorithm",
+                        "Index", "Optimizer", "SS", "DBS", "CHS", "SSE", "CVS",
+                        "NMI", "ARI", "CA", "Tests", "Clusters",
+                    ])
+                    +"\n"
+                )
+                with open(args.dboutput+"exec.csv", "w") as run:
+                    run.write(output)
             clstr = Clustering(
                 data, args.dbinput, args.dboutput, n_clusters_ = args.k_clusters, metric_ = args.distance_metric,
                 algorithm_ = args.algorithm, optimization_ = args.evaluation,
@@ -183,45 +192,60 @@ def main():
             clabels, k_tests = clstr.cluster_analysis()
             print("[Process] Evaluating Clusters.")
             timer = (time.time() - start_time) / 60
-
-            ivi_ss = clstr.__silhouette(np.array(clabels))
-            ivi_ch = clstr.__davies_bouldin(np.array(clabels))
-            ivi_db = clstr.__calinski_harabasz(np.array(clabels))
-            ivi_sse = clstr.__sse(np.array(clabels))
-            ivi_cvs = clstr.__cv_size(np.array(clabels))
+            ivi_ss = clstr._silhouette(np.array(clabels))
+            ivi_ch = clstr._davies_bouldin(np.array(clabels))
+            ivi_db = clstr._calinski_harabasz(np.array(clabels))
+            ivi_sse = clstr._sse(np.array(clabels))
+            ivi_cvs = clstr._cv_size(np.array(clabels))
             if len(labels) > 0 and len(labels) == len(clabels):
                 evi_ari = adjusted_rand_score(labels, clabels)
                 evi_nmi = normalized_mutual_info_score(labels, clabels)
                 evi_ca = cluster_accuracy(labels, clabels)
             print("[Process] Writing results.")
             metrics = [ivi_ss, ivi_db, ivi_ch, ivi_sse, ivi_cvs, evi_nmi, evi_ari, evi_ca]
-            with open(args.dboutput+"clusters.txt", "a") as out:
-                out.write(" ".join([str(c) for c in clabels])+"\n")
+            output = " ".join([str(c) for c in clabels])+"\n"
+            with open(args.dboutput+"clusters.txt", "a") as run:
+                run.write(output)
     except Exception as err:
         print("[Error] "+str(err))
-        with open(args.dboutput+"exceptions.csv", "a") as out:
-            out.write(args.dataset
-                +"\t"+str(timer)
-                +"\t"+"\t".join([args.distance_metric, args.algorithm, args.evaluation, args.optimizer])
-                +"\t"+str(err).replace("\n","\t")
-                +"\n")
-
+        output = (
+            "\t".join([
+                args.dataset,
+                str(datetime.datetime.now()),
+                str(timer),
+                args.distance_metric,
+                args.algorithm,
+                args.evaluation,
+                args.optimizer,
+                str(err).replace("\n","\t")
+            ])
+            +"\n"
+        )
+        with open(args.dboutput+"exceptions.csv", "a") as run:
+            run.write(output)
     else:
-        if not os.path.isfile(args.dboutput+"exec.csv"):
-            with open(args.dboutput+"exec.csv", "w") as run:
-                csv_header = [
-                    "Dataset", "Time(min)", "Distance", "Algorithm", "Index", "Optimizer",
-                    "SS", "DBS", "CHS", "SSE", "CVS", "NMI", "ARI", "CA", "Tests", "Clusters"
-                ]
-                run.write("\t".join(csv_header)+"\n")
-
+        cluster_distribution = ":".join(
+            [str(len(np.where(clabels == l)[0])) for l in np.unique(clabels)]
+        )
+        cluster_metrics = "\t".join([str(round(m,4)) for m in metrics])
+        output = (
+            "\t".join([
+                args.dataset,
+                str(datetime.datetime.now()),
+                str(timer),
+                args.distance_metric,
+                args.algorithm,
+                args.evaluation,
+                args.optimizer,
+                cluster_metrics,
+                str(k_tests),
+                cluster_distribution,
+            ])
+            +"\n"
+        )
+        print(output)
         with open(args.dboutput+"exec.csv", "a") as run:
-            run.write(args.dataset+"\t"+str(timer)+"\t"+"\t".join([args.distance_metric, args.algorithm, args.evaluation, args.optimizer])
-                +"\t"+"\t".join([str(round(m,4)) for m in metrics])
-                +"\t"+str(k_tests)
-                +"\t"+":".join([str(len(np.where(clabels == l)[0])) for l in np.unique(clabels)])
-                +"\n")
-
+            run.write(output)
     print("[Process] Done!")
 
 

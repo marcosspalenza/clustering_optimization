@@ -5,7 +5,7 @@ import collections
 import scipy as sp
 import numpy as np
 from scipy import io
-from skopt import forest_minimize, gp_minimize, dummy_minimize, BayesSearchCV
+from scipy.optimize import minimize_scalar
 from sklearn.cluster import SpectralClustering, AgglomerativeClustering, MiniBatchKMeans, AffinityPropagation, Birch, DBSCAN # KMeans
 from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score, pairwise_distances, normalized_mutual_info_score, adjusted_rand_score
 
@@ -167,7 +167,7 @@ class Clustering:
     ## algorithms:  'cluto', 'libDocumento', 'agglomerative', 'spectral', 'kmeans', 'minibatch', 'birch', 'affinity', 'dbscan'
 
     def _run_agglomerative(self):
-        return AgglomerativeClustering(n_clusters=self.n_clusters, linkage="complete", affinity="precomputed").fit_predict(self.distance_mtx)
+        return AgglomerativeClustering(n_clusters=self.n_clusters, linkage="complete", metric="precomputed").fit_predict(self.distance_mtx)
 
 
     def _run_spectral(self):
@@ -191,80 +191,12 @@ class Clustering:
         return labels
 
 
-    # def _run_cluto(self):
-    #     '''
-    #     CLUTO official page
-    #     http://glaros.dtc.umn.edu/gkhome/cluto/cluto/overview
-    #     '''
-    #     '''
-    #     CLUTO was called and the results was not as expected. In euclidean graph method, CLUTO returns a vector smaller than the dataset size.
-    #     In this cases we return a null array to be discarded in the upper level (caller).
-    #     '''
-    #     if self.metric == "cosine":
-    #         os.system("vcluster -sim='cos' -showfeatures "+self.matrixpath+"values.mtx "+str(self.n_clusters))
-    #         return [int(t) for t in self.read_document("values.mtx.clustering."+str(self.n_clusters), self.matrixpath).split("\n") if t != ""]
-    #     if self.metric == "euclidean":
-    #         os.system("vcluster -sim='dist' -clmethod='graph' "+self.matrixpath+"values.mtx "+str(self.n_clusters))
-    #     else:
-    #         return []
-    #     return [int(t) for t in self.read_document("values.mtx.clustering."+str(self.n_clusters), self.matrixpath).split("\n") if t != ""]
-
-    # def _run_libDocumento(self, iterations=100):
-    #     # libDocumento have to be in the same path
-    #     code_path = os.path.realpath(__file__)[:-os.path.realpath(__file__)[::-1].find("/")]
-    #     if self.metric == "cosine":
-    #         os.system(code_path+"libDocumento_COS --clustering --algorithm kmeans --features "+self.matrixpath+"mmvalues.mtx -k "+str(self.n_clusters)+" --num-inter "+str(iterations))
-    #     if self.metric == "euclidean":
-    #         os.system(code_path+"libDocumento_ECL --clustering --algorithm kmeans --features "+self.matrixpath+"mmvalues.mtx -k "+str(self.n_clusters)+" --num-inter "+str(iterations))
-    #     else:
-    #         return []
-    #     return [int(t) for t in self.read_document("output.clustering", self.matrixpath).split("\n") if t != ""]
-
-    # def _run_kmeans(self):
-    #     scores = []
-    #     # all_distances, model_predictions, losses, is_initialized, init_op, training_op
-    #     if self.metric == "cosine":
-    #         with tf.Session() as sess:
-    #             kmeans = tf.contrib.factorization.KMeans(tf.convert_to_tensor(self.data, dtype=tf.float32), self.n_clusters, distance_metric=tf.contrib.factorization.COSINE_DISTANCE)
-    #             (all_scores, cluster_idx, clustering_scores, _, kmeans_init, kmeans_training_op) = kmeans.training_graph()
-    #             init = tf.global_variables_initializer()
-    #             sess.run(init)
-    #             sess.run(kmeans_init)
-    #             return sess.run(cluster_idx) [0]
-    #     if self.metric == "euclidean":
-    #         with tf.Session() as sess:
-    #             kmeans = tf.contrib.factorization.KMeans(tf.convert_to_tensor(self.data, dtype=tf.float32), self.n_clusters, distance_metric=tf.contrib.factorization.SQUARED_EUCLIDEAN_DISTANCE)
-    #             (all_scores, cluster_idx, clustering_scores, _, kmeans_init, kmeans_training_op) = kmeans.training_graph()
-    #             init = tf.global_variables_initializer()
-    #             sess.run(init)
-    #             sess.run(kmeans_init)
-    #             return sess.run(cluster_idx) [0]
-    #     else:
-    #         return []
-
 
     """
     Optimizer
     """
     def cluster_analysis(self):
-        #'gaussian' not implemented yet
-        # ['minibatch', 'birch', 'affinity'] just works on euclidean distances
-        """
-        ['cluto', 'libDocumento', 'agglomerative', 'spectral', 'kmeans', 'dbscan']:
-        ['cluto', 'libDocumento', 'agglomerative', 'spectral', 'kmeans', 'dbscan', 'minibatch', 'birch', 'affinity', 'gaussian']:
-                return []
-        """
-        #standard files, fixed names in clustering method call
-        # if self.algorithm == "libDocumento":
-        #     self.save_mm_matrix('mmvalues.mtx', self.data, self.matrixpath)
-        # if self.algorithm == "cluto":
-        #     self.save_matrix('values.mtx', self.data, self.matrixpath)
-        # cluster_labels = []
-        score, self.n_clusters, tests = self._optimize_n_clusters()
-        # if self.algorithm == "cluto":
-        #     cluster_labels = self._run_cluto()
-        # elif self.algorithm == "libDocumento":
-        #     cluster_labels = self._run_libDocumento()
+        score, self.n_clusters = self._optimize_n_clusters()
         if self.algorithm == "agglomerative":
             cluster_labels = self._run_agglomerative()
         elif self.algorithm == "spectral":
@@ -275,59 +207,23 @@ class Clustering:
             cluster_labels = self._run_dbscan()
         else:
             return None, -1
-        return cluster_labels, len(np.unique(tests))
+        return cluster_labels
 
 
     def _optimize_n_clusters(self):
         max_iter = self.cluster_max - self.cluster_min
         ntests = int(0.5 * (self.cluster_max - self.cluster_min))
-        if self.method == "exhaustive" or max_iter < 30:
-            # No-Optimize Full Test
-            result = self._cluster_metric(self.cluster_min)
-            best = self.cluster_min
-            for k_val in range(self.cluster_min, self.cluster_max):
-                run_result = self._cluster_metric([k_val])
-                if run_result < result:
-                    result = run_result
-                    best = k_val
-            return result, best, self.cluster_max - self.cluster_min
-        elif self.method == "gprocess":
-            # Gaussian Opt.
-            # gp_minimize is a gaussian implementation similar to sklearn GridSearch
-            res = gp_minimize(self._cluster_metric, [(self.cluster_min, self.cluster_max)], n_calls=ntests)
-            # res.fun #score
-            # res.func_vals #all tested scores
-            return res.fun, res.x[0], res.x_iters
-        elif self.method == "dtree":
-            # Decision Tree Opt.
-            res = forest_minimize(self._cluster_metric, [(self.cluster_min, self.cluster_max)], base_estimator='RF', n_calls=ntests)
-            # res.fun #score
-            # res.func_vals #all tested scores
-            return res.fun, res.x[0], res.x_iters
-        elif self.method == "dummy":
-            # Random Opt.
-            res = dummy_minimize(self._cluster_metric, [(self.cluster_min, self.cluster_max)], n_calls=ntests)
-            return res.fun, res.x[0], res.x_iters
+        res = minimize_scalar(self._cluster_metric, bounds=(self.cluster_min, self.cluster_max), options = {"maxiter": ntests})
+        return res.fun, int(res.x)
 
 
     def _cluster_metric(self, k_value):
         # Collect the return from skopt
         if type(k_value) == list:
-            self.n_clusters = k_value[0]
+            self.n_clusters = int(k_value[0])
         else:
-            self.n_clusters = k_value
+            self.n_clusters = int(k_value)
         warnings.filterwarnings('ignore', message='The objective has been evaluated at this point before.')
-        # The clustering algorithm chosen in the object construction
-        # if self.algorithm == "cluto":
-        #     try:
-        #         cluster_labels = self._run_cluto()
-        #     except Exception as e:
-        #         print("[ERROR] An error occoured while we tried to call CLUTO")
-        # elif self.algorithm == "libDocumento":
-        #     try:
-        #         cluster_labels = self._run_libDocumento()
-        #     except Exception as e:
-        #         print("[ERROR] An error occoured while we tried to call libDocumento clustering")
         if self.algorithm == "agglomerative":
             cluster_labels = self._run_agglomerative()
         elif self.algorithm == "spectral":

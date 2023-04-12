@@ -140,7 +140,6 @@ def main():
     #     warnings.simplefilter("ignore")
     timer = 0.
     metrics = []
-    k_tests = 0
     clabels = []
     try:
         data = []
@@ -177,7 +176,7 @@ def main():
                     "\t".join([
                         "Dataset", "Date", "Time(min)", "Distance", "Algorithm",
                         "Index", "Optimizer", "SS", "DBS", "CHS", "SSE", "CVS",
-                        "NMI", "ARI", "CA", "Tests", "Clusters",
+                        "NMI", "ARI", "CA", "Clusters",
                     ])
                     +"\n"
                 )
@@ -189,7 +188,7 @@ def main():
                 method_ = args.optimizer, labels_=labels
             )
             print("[Process] Starting Clustering.")
-            clabels, k_tests = clstr.cluster_analysis()
+            clabels = clstr.cluster_analysis()
             print("[Process] Evaluating Clusters.")
             timer = (time.time() - start_time) / 60
             ivi_ss = clstr._silhouette(np.array(clabels))
@@ -238,7 +237,6 @@ def main():
                 args.evaluation,
                 args.optimizer,
                 cluster_metrics,
-                str(k_tests),
                 cluster_distribution,
             ])
             +"\n"
@@ -247,7 +245,6 @@ def main():
         with open(args.dboutput+"exec.csv", "a") as run:
             run.write(output)
     print("[Process] Done!")
-
 
 if __name__=="__main__":
     main()

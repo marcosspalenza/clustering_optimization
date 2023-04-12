@@ -215,7 +215,7 @@ def main():
                 args.distance_metric,
                 args.algorithm,
                 args.evaluation,
-                args.optimizer,
+                "default",
                 str(err).replace("\n","\t")
             ])
             +"\n"
@@ -235,7 +235,7 @@ def main():
                 args.distance_metric,
                 args.algorithm,
                 args.evaluation,
-                args.optimizer,
+                "default",
                 cluster_metrics,
                 cluster_distribution,
             ])

@@ -118,7 +118,7 @@ def main():
     # Distance matrix not supported in this version
     parser.add_argument("-a", "--algorithm", type=str, dest="algorithm", default="agglomerative", help="Clustering algorithm. Default ': agglomerative. '. \n"+"-".join(_ALGORITHMS))
     # Algorithms' choice not supported in this version
-    parser.add_argument("-t", "--optimizer", type=str, dest="optimizer", default="gprocess", help="Optimizer algorithm. Default : 'gprocess'. \n"+"-".join(_OPTIMIZERS))
+    # parser.add_argument("-t", "--optimizer", type=str, dest="optimizer", default="default", help="Optimizer algorithm.")
     parser.add_argument("-e", "--evaluation", type=str, dest="evaluation", default="silhouette", help="Optimization measure using Clustering Internal Validity Indexes. Default : 'silhouette'. \n"+"-".join(_IV_INDEXES))
     parser.add_argument("-k", "--kclusters", type=int, dest="k_clusters", default=0, help="Initial k value tested as the optimization starter")
     args = parser.parse_args()
@@ -126,7 +126,7 @@ def main():
     assert args.dbformat == "sparse" or args.dbformat == "dense", "Invalid matrix format"
     assert args.distance_metric in _METRICS, "A invalid distance metric was selected"
     assert args.algorithm in _ALGORITHMS, "This clustering algorithm currently not supported"
-    assert args.optimizer in _OPTIMIZERS, "This optimizer currently not avaliable"
+    # assert args.optimizer in _OPTIMIZERS, "This optimizer currently not avaliable"
     assert args.evaluation in _IV_INDEXES, "Internal Validity Index not found."
     assert args.dbinput != "" and args.dboutput != "", "Insert a valid input and output folder."
 

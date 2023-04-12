@@ -185,7 +185,7 @@ def main():
             clstr = Clustering(
                 data, args.dbinput, args.dboutput, n_clusters_ = args.k_clusters, metric_ = args.distance_metric,
                 algorithm_ = args.algorithm, optimization_ = args.evaluation,
-                method_ = args.optimizer, labels_=labels
+                labels_=labels
             )
             print("[Process] Starting Clustering.")
             clabels = clstr.cluster_analysis()

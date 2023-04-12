@@ -23,7 +23,7 @@ class Data:
 
 class Clustering:
 
-    def __init__(self, data_, matrixpath_, outputpath_=None, distance_=None, metric_="cosine", n_clusters_=0, optimization_="silhouette", algorithm_="spectral", method_="gprocess", labels_=[], idxfocus_=None):
+    def __init__(self, data_, matrixpath_, outputpath_=None, distance_=None, metric_="cosine", n_clusters_=0, optimization_="silhouette", algorithm_="spectral", labels_=[], idxfocus_=None):
         self.data = data_
         if distance_ == [] or distance_ == None:
             warnings.filterwarnings('ignore', message='Metric applies a coversion.')
@@ -32,7 +32,6 @@ class Clustering:
             self.distance_mtx = distance_
         self.idxfocus = idxfocus_
         self.metric = metric_
-        self.method = method_
         self.matrixpath = matrixpath_
         if outputpath_ == None or outputpath_ == "":
             self.outputpath = matrixpath_
